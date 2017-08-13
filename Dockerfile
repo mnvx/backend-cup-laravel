@@ -16,6 +16,9 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E5267A6C C300EE8C &
 		libcurl3 \
 		libcurl3-dev \
 		nginx \
+		mysql-server \
+		postgresql \
+		postgresql-contrib \
 		php7.0-fpm \
 		php7.0-cli \
 		php7.0-gd \
@@ -27,10 +30,10 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E5267A6C C300EE8C &
 		php7.0-zip \
 		php7.0-xml \
 		php-mysql \
+		php7.0-pgsql \
 		redis-server \
 		sudo \
 		git \
-		apt-utils \
 		mc
 
 # install composer
@@ -62,12 +65,20 @@ RUN sed -i 's/;opcache.enable=0/opcache.enable=1/g' /etc/php/7.0/fpm/php.ini && 
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN chown www-data:www-data /var/www
-RUN sudo -u www-data git clone https://github.com/mnvx/backend-cup-laravel /var/www/cup-backend
-RUN sudo -u www-data composer install --working-dir="/var/www/cup-backend"
+
+#RUN sudo -u www-data git clone https://github.com/mnvx/backend-cup-laravel /var/www/cup-backend
+#RUN sudo -u www-data composer install --working-dir="/var/www/cup-backend"
+ADD ./ /var/www/cup-backend
+
 RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
+
 RUN php /var/www/cup-backend/artisan key:generate
+
+ADD ./install/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
+RUN service postgresql start && psql -U postgres -c 'CREATE DATABASE cup;' && php /var/www/cup-backend/artisan migrate
+#RUN php /var/www/cup-backend/artisan migrate
 
 # Expose volumes and ports
 EXPOSE 80
 
-CMD service php7.0-fpm start && service nginx start
+CMD service postgresql start && service php7.0-fpm start && service nginx start
