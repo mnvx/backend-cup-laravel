@@ -1,0 +1,53 @@
+# контекст, в котором указываются директивы виртуального сервера
+server {
+
+    # порт на который сервер будет принимать запросы
+    listen 80;
+
+    # имена виртуального сервера
+    server_name www.cup-backend.lh cup-backend.lh cup-backend.local;
+
+    # корневой каталог для запросов
+    root /var/www/cup-backend/public;
+
+    # максимально допустимый размер тела запроса клиента, указываемый в поле “Content-Length” заголовка запроса
+    client_max_body_size 2g;
+
+    # файл, который будет хранить лог
+    access_log /var/log/nginx/cup-backend_access.log;
+
+    # файл, который будет хранить лог
+    error_log /var/log/nginx/cup-backend_error.log;
+
+    # определяет файлы, которые будут использоваться в качестве индекса
+    index index.php index.html;
+
+    # контекст для запросов в директории /css/font/
+    location /css/font/ {
+        # конфигурирует CORS так, чтобы было возможно получать файлы шрифтов с любого домена
+        add_header Access-Control-Allow-Origin *;
+    }
+
+    # контекст для запросов в директории /
+    location / {
+        # использует для обработки запроса найденный файл или использует index.php если файла не существует
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    # контекст для запросов к php файлам
+    location ~ \.php$ {
+
+        # задаёт адрес FastCGI-сервера
+        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+        #fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
+
+        # задаёт имя файла, который будет добавляться после URI, если URI заканчивается слэшом
+        fastcgi_index  index.php;
+
+        # задаёт параметр, который будет передаваться FastCGI-серверу
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        # стандартные параметры, которые будет передаваться FastCGI-серверу
+        include        fastcgi_params;
+    }
+}
