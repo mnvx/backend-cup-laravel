@@ -6,6 +6,7 @@ use App\Model\Entity\Location;
 use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class LocationController extends ApiController
 {
@@ -63,11 +64,12 @@ class LocationController extends ApiController
         if ($fromAge || $toAge || $gender) {
             $query->join('profile', 'profile.id', '=', 'visit.user');
 
+            $time = time();
             if ($fromAge) {
-                $query->where('profile.birth_date', '<', $fromAge);
+                $query->whereRaw('profile.birth_date < ' . ($time - $fromAge * 31536000));
             }
             if ($toAge) {
-                $query->where('profile.birth_date', '>', $toAge);
+                $query->whereRaw('profile.birth_date > ' . ($time - $toAge * 31536000));
             }
             if ($gender) {
                 $query->where('profile.gender', '=', $gender);
@@ -76,14 +78,17 @@ class LocationController extends ApiController
 
         $res = $query->first();
 
-        return $this->jsonResponse('{
-    "avg": ' . round($res->res, 5) . '
-}');
+        return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
     }
 
     public function create()
     {
-        Location::insert(request()->json()->all());
+        try {
+            Location::insert(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
         return $this->jsonResponse('{}');
     }
 
@@ -99,8 +104,13 @@ class LocationController extends ApiController
             return $this->get404();
         }
 
-        $entity->where('id', '=', $id)
-            ->update(request()->json()->all());
+        try {
+            Location::where('id', '=', $id)
+                ->update(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
 
         return $this->jsonResponse('{}');
     }

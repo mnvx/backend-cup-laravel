@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
+use Throwable;
 
 class UserController extends ApiController
 {
@@ -59,13 +60,19 @@ class UserController extends ApiController
         if ($distance = request()->get('toDistance')) {
             $query->where('distance', '<', $distance);
         }
+        $query->orderBy('visited_at');
 
         return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
     }
 
     public function create()
     {
-        User::insert(request()->json()->all());
+        try {
+            User::insert(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
         return $this->jsonResponse('{}');
     }
 
@@ -81,8 +88,21 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        $entity->where('id', '=', $id)
-            ->update(request()->json()->all());
+//        $email = request()->json()->get('email');
+//        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+//            return $this->get400();
+//        }
+        if (request()->json()->get('id')) {
+            return $this->get400();
+        }
+
+        try {
+            User::where('id', '=', $id)
+                ->update(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
 
         return $this->jsonResponse('{}');
     }

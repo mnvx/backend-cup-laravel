@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Visit;
+use Throwable;
 
 class VisitController extends ApiController
 {
@@ -23,7 +24,12 @@ class VisitController extends ApiController
 
     public function create()
     {
-        Visit::insert(request()->json()->all());
+        try {
+            Visit::insert(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
         return $this->jsonResponse('{}');
     }
 
@@ -39,8 +45,13 @@ class VisitController extends ApiController
             return $this->get404();
         }
 
-        $entity->where('id', '=', $id)
-            ->update(request()->json()->all());
+        try {
+            Visit::where('id', '=', $id)
+                ->update(request()->json()->all());
+        }
+        catch (Throwable $e) {
+            return $this->get400();
+        }
 
         return $this->jsonResponse('{}');
     }

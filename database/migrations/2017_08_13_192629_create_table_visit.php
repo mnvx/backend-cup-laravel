@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -22,6 +23,8 @@ class CreateTableVisit extends Migration
             $table->unsignedInteger('visited_at');
             $table->tinyInteger('mark');
         });
+        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (visited_at >= 946674000 AND visited_at < 1420146000)");
+        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (mark BETWEEN 0 AND 5)");
     }
 
     /**

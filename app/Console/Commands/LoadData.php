@@ -58,7 +58,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "users...";
+            echo "users..." . PHP_EOL;
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -66,7 +66,6 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO profile ("id", "birth_date", "email", "first_name", "last_name", "gender") VALUES ';
             $first = true;
-            $count = 0;
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -83,15 +82,11 @@ class LoadData extends Command
                 ')';
 
                 $first = false;
-//                User::insert([$item]);
-                $count++;
             }
-            echo $count . PHP_EOL;
 
             $this->executeSql($sql);
-
-            //User::insert($data);
         }
+        $this->alterSequence('profile');
 
         zip_close($zip);
     }
@@ -134,13 +129,11 @@ class LoadData extends Command
                 ')';
 
                 $first = false;
-                //Location::insert([$item]);
             }
 
             $this->executeSql($sql);
-
-            //Location::insert($data);
         }
+        $this->alterSequence('location');
 
         zip_close($zip);
     }
@@ -183,13 +176,11 @@ class LoadData extends Command
                 ')';
 
                 $first = false;
-                //Visit::insert([$item]);
             }
 
             $this->executeSql($sql);
-
-            //Visit::insert($data);
         }
+        $this->alterSequence('visit');
 
         zip_close($zip);
     }
@@ -208,4 +199,15 @@ class LoadData extends Command
             }
         }
     }
+
+    /**
+     * Установка корректного sequence
+     * @param string $tableName
+     */
+    protected function alterSequence($tableName)
+    {
+        $newId = DB::table($tableName)->select(DB::raw('MAX(id) as max_id'))->first()->max_id + 1;
+        DB::statement('ALTER SEQUENCE ' . $tableName . '_id_seq' . ' RESTART WITH ' . $newId);
+    }
+
 }
