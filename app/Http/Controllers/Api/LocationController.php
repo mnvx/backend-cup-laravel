@@ -4,26 +4,48 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Location;
 use App\Model\Entity\Visit;
-use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LocationController extends ApiController
 {
     public function get($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = Location::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
-        return $entity->toJson();
+        return $this->jsonResponse($entity->toJson());
     }
 
-    public function getAverage($id)
+    public function getAverage($id, Request $request)
     {
+        if (!$this->customValidate($request, [
+            'fromDate' => 'int',
+            'toDate' => 'int',
+            'fromAge' => 'int',
+            'toAge' => 'int',
+            'gender' => 'in:m,f',
+        ])) {
+            return $this->get400();
+        }
+
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
+        $entity = Location::find($id);
+
+        if (!$entity) {
+            return $this->get404();
+        }
+
         $query = Visit::select(DB::raw('COALESCE(AVG(mark), 0) as res'))
             ->where('location', '=', $id);
 
@@ -39,7 +61,7 @@ class LocationController extends ApiController
         $gender = request()->get('gender');
 
         if ($fromAge || $toAge || $gender) {
-            $query->join('profile', 'profile.id', '=', 'visit.user_id');
+            $query->join('profile', 'profile.id', '=', 'visit.user');
 
             if ($fromAge) {
                 $query->where('profile.birth_date', '<', $fromAge);
@@ -54,30 +76,32 @@ class LocationController extends ApiController
 
         $res = $query->first();
 
-        return '{
-    "avg": ' . $res->res . '
-}';
+        return $this->jsonResponse('{
+    "avg": ' . round($res->res, 5) . '
+}');
     }
 
     public function create()
     {
         Location::insert(request()->json()->all());
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 
     public function update($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = Location::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
         $entity->where('id', '=', $id)
             ->update(request()->json()->all());
 
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 }

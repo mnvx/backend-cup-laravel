@@ -71,14 +71,21 @@ RUN chown www-data:www-data /var/www
 ADD ./ /var/www/cup-backend
 
 RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
-
 RUN php /var/www/cup-backend/artisan key:generate
 
 ADD ./install/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
-RUN service postgresql start && psql -U postgres -c 'CREATE DATABASE cup;' && php /var/www/cup-backend/artisan migrate
-#RUN php /var/www/cup-backend/artisan migrate
+RUN service postgresql start && \
+    psql -U postgres -c 'CREATE DATABASE cup;' && \
+    php /var/www/cup-backend/artisan migrate && \
+    service postgresql stop
 
 # Expose volumes and ports
 EXPOSE 80
 
-CMD service postgresql start && service php7.0-fpm start && service nginx start
+ADD ./install/data.zip /tmp/data/data.zip
+
+CMD date ; service postgresql start ; \
+    date ; service php7.0-fpm start ; \
+    date ; php /var/www/cup-backend/artisan cup:load-data ; \
+    date ; service nginx start ; \
+    date

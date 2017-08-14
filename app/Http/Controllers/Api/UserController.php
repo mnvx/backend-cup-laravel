@@ -4,26 +4,48 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
-use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 
 class UserController extends ApiController
 {
     public function get($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = User::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
-        return $entity->toJson();
+        return $this->jsonResponse($entity->toJson());
     }
 
-    public function getVisits($id)
+    public function getVisits($id, Request $request)
     {
-        $query = Visit::where('user', '=', $id);
+        if (!$this->customValidate($request, [
+            'fromDate' => 'int',
+            'toDate' => 'int',
+            'toDistance' => 'int',
+        ])) {
+            return $this->get400();
+        }
+
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
+        $entity = User::find($id);
+
+        if (!$entity) {
+            return $this->get404();
+        }
+
+        $query = Visit::select('mark', 'visited_at', 'place')
+            ->where('user', '=', $id)
+            ->join('location', 'location.id', '=', 'visit.location');
 
         if ($fromDate = request()->get('fromDate')) {
             $query->where('visited_at', '>', $fromDate);
@@ -38,29 +60,31 @@ class UserController extends ApiController
             $query->where('distance', '<', $distance);
         }
 
-        return $query->get()->toJson();
+        return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
     }
 
     public function create()
     {
         User::insert(request()->json()->all());
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 
     public function update($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = User::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
         $entity->where('id', '=', $id)
             ->update(request()->json()->all());
 
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 
 }

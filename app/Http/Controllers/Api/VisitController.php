@@ -3,43 +3,46 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Visit;
-use Illuminate\Http\Response;
 
 class VisitController extends ApiController
 {
     public function get($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = Visit::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
-        return $entity->toJson();
+        return $this->jsonResponse($entity->toJson());
     }
 
     public function create()
     {
         Visit::insert(request()->json()->all());
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 
     public function update($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         $entity = Visit::find($id);
 
         if (!$entity) {
-            $response = new Response();
-            $response->setStatusCode(404);
-            return $response;
+            return $this->get404();
         }
 
         $entity->where('id', '=', $id)
             ->update(request()->json()->all());
 
-        return '{}';
+        return $this->jsonResponse('{}');
     }
 
 }
