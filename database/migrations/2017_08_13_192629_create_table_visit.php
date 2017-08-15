@@ -18,10 +18,12 @@ class CreateTableVisit extends Migration
     {
         Schema::create($this->table, function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('location')->index();
-            $table->integer('user')->index();
-            $table->unsignedInteger('visited_at');
+            $table->integer('location');
+            $table->integer('user');
+            $table->bigInteger('visited_at')->index();
             $table->tinyInteger('mark');
+            $table->index(['user', 'location', 'visited_at']);
+            $table->index(['location', 'user']);
         });
         DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (visited_at >= 946674000 AND visited_at < 1420146000)");
         DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (mark BETWEEN 0 AND 5)");

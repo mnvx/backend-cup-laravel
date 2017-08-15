@@ -65,12 +65,16 @@ class LocationController extends ApiController
             $query->join('profile', 'profile.id', '=', 'visit.user');
 
             $time = time();
-            if ($fromAge) {
+            if ($fromAge && $toAge) {
+                $query->whereRaw('profile.birth_date BETWEEN ' . ($time - $fromAge * 31536000) . ' AND ' . ($time - $toAge * 31536000));
+            }
+            elseif ($fromAge) {
                 $query->whereRaw('profile.birth_date < ' . ($time - $fromAge * 31536000));
             }
-            if ($toAge) {
+            elseif ($toAge) {
                 $query->whereRaw('profile.birth_date > ' . ($time - $toAge * 31536000));
             }
+
             if ($gender) {
                 $query->where('profile.gender', '=', $gender);
             }

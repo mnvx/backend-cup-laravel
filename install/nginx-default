@@ -38,7 +38,7 @@ server {
     location ~ \.php$ {
 
         # задаёт адрес FastCGI-сервера
-        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php7.1-fpm.sock;
         #fastcgi_pass unix:/var/run/php/php5.6-fpm.sock;
 
         # задаёт имя файла, который будет добавляться после URI, если URI заканчивается слэшом

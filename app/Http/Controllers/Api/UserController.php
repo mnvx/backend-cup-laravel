@@ -88,10 +88,6 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-//        $email = request()->json()->get('email');
-//        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-//            return $this->get400();
-//        }
         if (request()->json()->get('id')) {
             return $this->get400();
         }

@@ -64,7 +64,7 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['users'];
 
-            $sql = 'INSERT INTO profile ("id", "birth_date", "email", "first_name", "last_name", "gender") VALUES ';
+            $sql = 'INSERT INTO profile (id, birth_date, email, first_name, last_name, gender) VALUES ';
             $first = true;
             foreach ($data as $item)
             {
@@ -112,7 +112,7 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['locations'];
 
-            $sql = 'INSERT INTO location ("id", "place", "country", "city", "distance") VALUES ';
+            $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
             $first = true;
             foreach ($data as $item)
             {
@@ -159,7 +159,7 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['visits'];
 
-            $sql = 'INSERT INTO visit ("id", "location", "user", "visited_at", "mark") VALUES ';
+            $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
             $first = true;
             foreach ($data as $item)
             {
