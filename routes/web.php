@@ -17,6 +17,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/test/tarantool', 'Test\TarantoolController@index');
+
 // Users
 Route::get('/users/{id}', 'Api\UserController@get');
 Route::get('/users/{id}/visits', 'Api\UserController@getVisits');

@@ -64,6 +64,20 @@ RUN sed -i 's/;opcache.enable=0/opcache.enable=1/g' /etc/php/7.1/fpm/php.ini && 
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Install Tarantool
+RUN curl http://download.tarantool.org/tarantool/1.7/gpgkey | sudo apt-key add - && \
+    release=`lsb_release -c -s` && \
+    apt-get update && \
+    apt-get -y install apt-transport-https
+RUN rm -f /etc/apt/sources.list.d/*tarantool*.list
+RUN touch /etc/apt/sources.list.d/tarantool_1_7.list
+RUN release=`lsb_release -c -s` && echo "deb http://download.tarantool.org/tarantool/1.7/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
+RUN release=`lsb_release -c -s` && echo "deb-src http://download.tarantool.org/tarantool/1.7/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
+RUN apt-get update && \
+    apt-get -y install tarantool
+    #mkdir /var/lib/tarantool
+ADD ./install/tarantool.lua /etc/tarantool/instances.enabled/tarantool.lua
+
 RUN chown www-data:www-data /var/www
 
 #RUN sudo -u www-data git clone https://github.com/mnvx/backend-cup-laravel /var/www/cup-backend
@@ -86,13 +100,14 @@ RUN service postgresql start && \
 
 # Expose volumes and ports
 EXPOSE 80
+EXPOSE 3301
 
 ADD ./install/data.zip /tmp/data/data.zip
 
-CMD date ; service postgresql start ; \
-#date ; service mysql start ; \
-#date ; service postgresql start ; \
-    date ; service php7.1-fpm start ; \
-    date ; php /var/www/cup-backend/artisan cup:load-data ; \
-    date ; service nginx start ; \
-    date
+CMD service postgresql start ; \
+#   service mysql start ; \
+#   service postgresql start ; \
+    service tarantool start ; \
+    service php7.1-fpm start ; \
+    #php /var/www/cup-backend/artisan cup:load-data ; \
+    service nginx start
