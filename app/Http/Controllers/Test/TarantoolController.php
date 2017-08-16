@@ -20,6 +20,7 @@ class TarantoolController
         // Selecting all data
         $result = $space->select([1]);
         var_dump($result->getData());
+        //$space->update()
 
 //        // Result: inserted tuple { 1, 'foo', 'bar' }
 //        $space->insert([1, 'foo', 'bar']);

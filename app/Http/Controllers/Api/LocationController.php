@@ -10,20 +10,6 @@ use Throwable;
 
 class LocationController extends ApiController
 {
-    public function get($id)
-    {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-
-        $entity = Location::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        return $this->jsonResponse($entity->toJson());
-    }
 
     public function getAverage($id, Request $request)
     {
@@ -96,7 +82,7 @@ class LocationController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id)
+    public function edit($id)
     {
         if (!$this->isCorrectId($id)) {
             return $this->get404();

@@ -13,11 +13,11 @@ box.schema.space.create('profile', {
 })
 box.space.profile:create_index('id', {
     type = 'hash',
-    parts = {1, 'unsigned'}
+    parts = {1, 'integer'}
 })
 box.space.profile:create_index('birth_date', {
     type = 'tree',
-    parts = {6, 'unsigned'}
+    parts = {6, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'profile')
 
@@ -29,7 +29,7 @@ box.schema.space.create('location', {
 })
 box.space.location:create_index('id', {
     type = 'hash',
-    parts = {1, 'unsigned'}
+    parts = {1, 'integer'}
 })
 box.space.location:create_index('country', {
     type = 'tree',
@@ -37,7 +37,7 @@ box.space.location:create_index('country', {
 })
 box.space.location:create_index('distance', {
     type = 'tree',
-    parts = {5, 'unsigned'}
+    parts = {5, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'location')
 
@@ -49,19 +49,19 @@ box.schema.space.create('visit', {
 })
 box.space.visit:create_index('id', {
     type = 'hash',
-    parts = {1, 'unsigned'}
+    parts = {1, 'integer'}
 })
 box.space.visit:create_index('location', {
     type = 'tree',
-    parts = {2, 'unsigned'}
+    parts = {2, 'integer'}
 })
 box.space.visit:create_index('user', {
     type = 'tree',
-    parts = {3, 'unsigned'}
+    parts = {3, 'integer'}
 })
 box.space.visit:create_index('visited_at', {
     type = 'tree',
-    parts = {4, 'unsigned'}
+    parts = {4, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'visit')
 

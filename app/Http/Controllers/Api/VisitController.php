@@ -7,20 +7,6 @@ use Throwable;
 
 class VisitController extends ApiController
 {
-    public function get($id)
-    {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-
-        $entity = Visit::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        return $this->jsonResponse($entity->toJson());
-    }
 
     public function create()
     {
@@ -33,7 +19,7 @@ class VisitController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id)
+    public function edit($id)
     {
         if (!$this->isCorrectId($id)) {
             return $this->get404();

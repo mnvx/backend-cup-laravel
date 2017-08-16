@@ -5,24 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
-use Throwable;
+use Illuminate\Http\Response;
 
 class UserController extends ApiController
 {
-    public function get($id)
-    {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
+    protected $spaceName = 'profile';
 
-        $entity = User::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        return $this->jsonResponse($entity->toJson());
-    }
+    protected $fields = [
+        1 => 'id',
+        2 => 'email',
+        3 => 'first_name',
+        4 => 'last_name',
+        5 => 'gender',
+        6 => 'birth_date',
+    ];
 
     public function getVisits($id, Request $request)
     {
@@ -65,42 +61,46 @@ class UserController extends ApiController
         return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
     }
 
-    public function create()
+    /**
+     * Process standard POST (new) query
+     * @param Request $request
+     * @return Response
+     */
+    public function create(Request $request)
     {
-        try {
-            User::insert(request()->json()->all());
-        }
-        catch (Throwable $e) {
+        if (!$this->customValidate($request, [
+            'id' => 'required|int',
+            'email' => 'required|max:100',
+            'first_name' => 'required|max:50',
+            'last_name' => 'required|max:50',
+            'gender' => 'required|in:m,f',
+            'birth_date' => 'required|int',
+        ])) {
             return $this->get400();
         }
-        return $this->jsonResponse('{}');
+
+        return $this->insert($request->json()->all());
     }
 
-    public function update($id)
+    /**
+     * Process standard POST (edit) query
+     * @param int $id
+     * @param Request $request
+     * @return Response
+     */
+    public function edit($id, Request $request)
     {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-
-        $entity = User::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        if (request()->json()->get('id')) {
+        if (!$this->customValidate($request, [
+            'email' => 'required|max:100',
+            'first_name' => 'required|max:50',
+            'last_name' => 'required|max:50',
+            'gender' => 'required|in:m,f',
+            'birth_date' => 'required|int',
+        ])) {
             return $this->get400();
         }
 
-        try {
-            User::where('id', '=', $id)
-                ->update(request()->json()->all());
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        return $this->jsonResponse('{}');
+        return $this->update($id, $request->json()->all());
     }
 
 }

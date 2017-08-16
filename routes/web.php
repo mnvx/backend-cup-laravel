@@ -23,15 +23,15 @@ Route::get('/test/tarantool', 'Test\TarantoolController@index');
 Route::get('/users/{id}', 'Api\UserController@get');
 Route::get('/users/{id}/visits', 'Api\UserController@getVisits');
 Route::post('/users/new', 'Api\UserController@create');
-Route::post('/users/{id}', 'Api\UserController@update');
+Route::post('/users/{id}', 'Api\UserController@edit');
 
 // Locations
 Route::get('/locations/{id}', 'Api\LocationController@get');
 Route::get('/locations/{id}/avg', 'Api\LocationController@getAverage');
 Route::post('/locations/new', 'Api\LocationController@create');
-Route::post('/locations/{id}', 'Api\LocationController@update');
+Route::post('/locations/{id}', 'Api\LocationController@edit');
 
 // Visits
 Route::get('/visits/{id}', 'Api\VisitController@get');
 Route::post('/visits/new', 'Api\VisitController@create');
-Route::post('/visits/{id}', 'Api\VisitController@update');
+Route::post('/visits/{id}', 'Api\VisitController@edit');
