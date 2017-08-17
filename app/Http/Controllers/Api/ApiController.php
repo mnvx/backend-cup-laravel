@@ -80,7 +80,7 @@ class ApiController extends Controller
             $this->space->insert($values);
         }
         catch (Exception $e) {
-            return $this->get400();
+            return $this->get400($e->getMessage());
         }
         return $this->jsonResponse('{}');
     }
@@ -124,9 +124,12 @@ class ApiController extends Controller
         return (string)(int)$id === (string)$id;
     }
 
-    public function get400()
+    public function get400($text = null)
     {
         $response = new Response();
+        if ($text) {
+            $response->header('error-text', $text);
+        }
         $response->setStatusCode(400);
         return $response;
     }

@@ -10,6 +10,15 @@ use Throwable;
 
 class LocationController extends ApiController
 {
+    protected $spaceName = 'location';
+
+    protected $fields = [
+        1 => 'id',
+        2 => 'place',
+        3 => 'country',
+        4 => 'city',
+        5 => 'distance',
+    ];
 
     public function getAverage($id, Request $request)
     {
@@ -71,37 +80,34 @@ class LocationController extends ApiController
         return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        try {
-            Location::insert(request()->json()->all());
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-        return $this->jsonResponse('{}');
+//        if (!$this->customValidate($request, [
+//            'id' => 'required|int',
+//            'email' => 'required|max:100',
+//            'first_name' => 'required|max:50',
+//            'last_name' => 'required|max:50',
+//            'gender' => 'required|in:m,f',
+//            'birth_date' => 'required|int',
+//        ])) {
+//            return $this->get400();
+//        }
+
+        return $this->insert($request->json()->all());
     }
 
-    public function edit($id)
+    public function edit($id, Request $request)
     {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
+//        if (!$this->customValidate($request, [
+//            'email' => 'required|max:100',
+//            'first_name' => 'required|max:50',
+//            'last_name' => 'required|max:50',
+//            'gender' => 'required|in:m,f',
+//            'birth_date' => 'required|int',
+//        ])) {
+//            return $this->get400();
+//        }
 
-        $entity = Location::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        try {
-            Location::where('id', '=', $id)
-                ->update(request()->json()->all());
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        return $this->jsonResponse('{}');
+        return $this->update($id, $request->json()->all());
     }
 }

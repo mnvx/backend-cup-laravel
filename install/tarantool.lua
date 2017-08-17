@@ -17,6 +17,7 @@ box.space.profile:create_index('id', {
 })
 box.space.profile:create_index('birth_date', {
     type = 'tree',
+    unique = false,
     parts = {6, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'profile')
@@ -33,10 +34,12 @@ box.space.location:create_index('id', {
 })
 box.space.location:create_index('country', {
     type = 'tree',
+    unique = false,
     parts = {3, 'string'}
 })
 box.space.location:create_index('distance', {
     type = 'tree',
+    unique = false,
     parts = {5, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'location')
@@ -53,14 +56,17 @@ box.space.visit:create_index('id', {
 })
 box.space.visit:create_index('location', {
     type = 'tree',
+    unique = false,
     parts = {2, 'integer'}
 })
 box.space.visit:create_index('user', {
     type = 'tree',
+    unique = false,
     parts = {3, 'integer'}
 })
 box.space.visit:create_index('visited_at', {
     type = 'tree',
+    unique = false,
     parts = {4, 'integer'}
 })
 box.schema.user.grant('guest', 'read,write', 'space', 'visit')

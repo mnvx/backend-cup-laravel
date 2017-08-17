@@ -3,43 +3,50 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Visit;
+use Illuminate\Http\Request;
 use Throwable;
 
 class VisitController extends ApiController
 {
+    protected $spaceName = 'visit';
 
-    public function create()
+    protected $fields = [
+        1 => 'id',
+        2 => 'location',
+        3 => 'user',
+        4 => 'visited_at',
+        5 => 'mark',
+    ];
+
+    public function create(Request $request)
     {
-        try {
-            Visit::insert(request()->json()->all());
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-        return $this->jsonResponse('{}');
+//        if (!$this->customValidate($request, [
+//            'id' => 'required|int',
+//            'email' => 'required|max:100',
+//            'first_name' => 'required|max:50',
+//            'last_name' => 'required|max:50',
+//            'gender' => 'required|in:m,f',
+//            'birth_date' => 'required|int',
+//        ])) {
+//            return $this->get400();
+//        }
+
+        return $this->insert($request->json()->all());
     }
 
-    public function edit($id)
+    public function edit($id, Request $request)
     {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
+//        if (!$this->customValidate($request, [
+//            'email' => 'required|max:100',
+//            'first_name' => 'required|max:50',
+//            'last_name' => 'required|max:50',
+//            'gender' => 'required|in:m,f',
+//            'birth_date' => 'required|int',
+//        ])) {
+//            return $this->get400();
+//        }
 
-        $entity = Visit::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        try {
-            Visit::where('id', '=', $id)
-                ->update(request()->json()->all());
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        return $this->jsonResponse('{}');
+        return $this->update($id, $request->json()->all());
     }
 
 }
