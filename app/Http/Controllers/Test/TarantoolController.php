@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Test;
 use Illuminate\Http\Request;
 use Tarantool\Client\Client;
 use Tarantool\Client\Connection\StreamConnection;
+use Tarantool\Client\Packer\PackUtils;
 use Tarantool\Client\Packer\PurePacker;
+use Tarantool\Client\Request\SelectRequest;
 
 class TarantoolController
 {
@@ -14,12 +16,27 @@ class TarantoolController
         //$conn = new StreamConnection();
         $conn = new StreamConnection('tcp://' . env('TARANTOOL_HOST') . ':' . env('TARANTOOL_PORT'));
 
-        $client = new Client($conn, new PurePacker());
+
+        $packer = new PurePacker();
+        $client = new Client($conn, $packer);
         $space = $client->getSpace('profile');
 
         // Selecting all data
         $result = $space->select([1]);
         var_dump($result->getData());
+
+
+        $stream = $conn->stream;
+        $tr = new SelectRequest($space->getId(), 0, [1], 0, 10000000, 0);
+        $data = $packer->pack($tr);
+        fwrite($stream, $data);
+        $length = stream_get_contents($stream, 5);
+        $length = PackUtils::unpackLength($length);
+        var_dump($length);
+        $data = stream_get_contents($stream, $length);
+        $data = $packer->unpack($data);
+        var_dump($data);
+
         //$space->update()
 
 //        // Result: inserted tuple { 1, 'foo', 'bar' }
@@ -31,7 +48,7 @@ class TarantoolController
 //        // Result: updated tuple { 2, 'baz', 'qux'} with { 2, 'BAZ', 'QUX' }
 //        $space->upsert([2, 'baz', 'qux'], [['=', 1, 'BAZ'], ['=', 2, 'QUX']]);
 
-        $result = $space->select([1]);
-        var_dump($result->getData());
+//        $result = $space->select([2]);
+//        var_dump($result->getData());
     }
 }
