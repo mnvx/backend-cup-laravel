@@ -19,6 +19,14 @@ class TarantoolController
 
         $packer = new PurePacker();
         $client = new Client($conn, $packer);
+
+        $client->evaluate('box.cfg()');
+        $client->evaluate('box.sql.execute([[CREATE TABLE table1 (column1 INTEGER PRIMARY KEY, column2 VARCHAR(100));]])');
+        $client->evaluate('box.sql.execute([[INSERT INTO table1 VALUES (1, \'A\');]])');
+        $result = $client->evaluate('box.sql.execute([[SELECT * FROM table1;]])');
+        var_dump($result->getData());
+        return;
+
         $space = $client->getSpace('profile');
 
         // Selecting all data
