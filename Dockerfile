@@ -74,6 +74,14 @@ ADD ./ /var/www/cup-backend
 RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
 RUN php /var/www/cup-backend/artisan key:generate
 
+# Postgres In-Memory
+RUN mkdir /mnt/ramfs
+RUN mount -t ramfs none /mnt/ramfs
+RUN mkdir /mnt/ramfs/pgdata && \
+    chown postgres:postgres /mnt/ramfs/pgdata && \
+    chmod 600 /mnt/ramfs/pgdata
+RUN psql -U postgres -c 'CREATE TABLESPACE ram LOCATION '/mnt/ramfs/pgdata';'
+
 ADD ./install/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
 RUN service postgresql start && \
 # service mysql start && \
