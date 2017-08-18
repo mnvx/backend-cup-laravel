@@ -109,5 +109,5 @@ CMD service postgresql start ; \
 #   service postgresql start ; \
     service tarantool start ; \
     service php7.1-fpm start ; \
-    #php /var/www/cup-backend/artisan cup:load-data ; \
+    php /var/www/cup-backend/artisan cup:load-data ; \
     service nginx start

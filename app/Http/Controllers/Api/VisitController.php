@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
-use Throwable;
 
 class VisitController extends ApiController
 {
@@ -20,31 +18,29 @@ class VisitController extends ApiController
 
     public function create(Request $request)
     {
-//        if (!$this->customValidate($request, [
-//            'id' => 'required|int',
-//            'email' => 'required|max:100',
-//            'first_name' => 'required|max:50',
-//            'last_name' => 'required|max:50',
-//            'gender' => 'required|in:m,f',
-//            'birth_date' => 'required|int',
-//        ])) {
-//            return $this->get400();
-//        }
+        if (!$this->customValidate($request, [
+            'id' => 'required|int',
+            'location' => 'required|int',
+            'user' => 'required|int',
+            'visited_at' => 'required|int|min:946674000|max:1420145999',
+            'mark' => 'required|int|min:0|max:5',
+        ])) {
+            return $this->get400();
+        }
 
         return $this->insert($request->json()->all());
     }
 
     public function edit($id, Request $request)
     {
-//        if (!$this->customValidate($request, [
-//            'email' => 'required|max:100',
-//            'first_name' => 'required|max:50',
-//            'last_name' => 'required|max:50',
-//            'gender' => 'required|in:m,f',
-//            'birth_date' => 'required|int',
-//        ])) {
-//            return $this->get400();
-//        }
+        if (!$this->customValidate($request, [
+            'location' => 'required|int',
+            'user' => 'required|int',
+            'visited_at' => 'required|int|min:946674000|max:1420145999',
+            'mark' => 'required|int|min:0|max:5',
+        ])) {
+            return $this->get400();
+        }
 
         return $this->update($id, $request->json()->all());
     }

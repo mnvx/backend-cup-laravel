@@ -5,6 +5,9 @@ namespace App\Console\Commands;
 use App\Model\Entity\Location;
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
+use App\Model\Repository\LocationRepository;
+use App\Model\Repository\ProfileRepository;
+use App\Model\Repository\VisitRepository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -35,11 +38,46 @@ class LoadData extends Command
     {
         echo 'load_files' . PHP_EOL;
 
-        $this->loadUsers();
-        $this->loadLocations();
-        $this->loadVisits();
+        $this->load('users', new ProfileRepository());
+        $this->load('locations', new LocationRepository());
+        $this->load('visits', new VisitRepository());
+
+//        $this->loadUsers();
+//        $this->loadLocations();
+//        $this->loadVisits();
 
         echo 'files_loaded' . PHP_EOL;
+    }
+
+    protected function load($entityName, $repo)
+    {
+        $zip = zip_open($this->path);
+
+        while ($zip_entry = zip_read($zip)) {
+            $filename = zip_entry_name($zip_entry);
+            echo $filename . "\n";
+            if (
+                substr($filename, -5) !== '.json'
+                || (
+                    explode('_', $filename)[0] !== $entityName
+                    && explode('_', $filename)[0] !== 'data/data/' . $entityName
+                )
+            ) {
+                continue;
+            }
+            echo $entityName . "..." . PHP_EOL;
+            zip_entry_open($zip, $zip_entry, "r");
+            $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
+            zip_entry_close($zip_entry);
+            $data = json_decode($json, true)[$entityName];
+
+            foreach ($data as $item)
+            {
+                $repo->insert($item);
+            }
+        }
+
+        zip_close($zip);
     }
 
     protected function loadUsers()

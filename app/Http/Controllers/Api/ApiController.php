@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Model\Repository\AbstractRepository;
 use Exception;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
@@ -33,11 +34,18 @@ class ApiController extends Controller
      */
     protected $fields;
 
+    /**
+     * @var AbstractRepository
+     */
+    protected $repo;
+
     public function __construct()
     {
         $conn = new StreamConnection('tcp://' . env('TARANTOOL_HOST') . ':' . env('TARANTOOL_PORT'));
         $this->client = new Client($conn, new PurePacker());
         $this->space = $this->client->getSpace($this->spaceName);
+        $repositoryClassName = '\\App\\Model\\Repository\\' . ucfirst($this->spaceName) . 'Repository';
+        $this->repo = new $repositoryClassName;
     }
 
     /**
@@ -47,23 +55,17 @@ class ApiController extends Controller
      */
     public function get($id)
     {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-
         try {
-            $data = $this->space->select([(int)$id])->getData();
+            if ($entity = $this->repo->find($id)) {
+                return $this->jsonResponse(json_encode($entity));
+            }
+            else {
+                return $this->get404();
+            }
         }
         catch (Exception $e) {
-            return $this->get404();
+            return $this->get400($e->getMessage());
         }
-
-        $entity = [];
-        foreach ($data[0] as $key => $value) {
-            $entity[$this->fields[$key + 1]] = $value;
-        }
-
-        return $this->jsonResponse(json_encode($entity));
     }
 
     /**
@@ -72,17 +74,17 @@ class ApiController extends Controller
      */
     public function insert($params)
     {
-        $values = [];
-        foreach ($this->fields as $field) {
-            $values[] = $params[$field];
-        }
         try {
-            $this->space->insert($values);
+            if ($this->repo->insert($params)) {
+                return $this->jsonResponse('{}');
+            }
+            else {
+                return $this->get404();
+            }
         }
         catch (Exception $e) {
             return $this->get400($e->getMessage());
         }
-        return $this->jsonResponse('{}');
     }
 
     /**
@@ -92,39 +94,25 @@ class ApiController extends Controller
      */
     public function update($id, $params)
     {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-        $id = (int)$id;
-
         try {
-            $this->space->select([$id]);
-        }
-        catch (Exception $e) {
-            return $this->get404();
-        }
-
-        if (isset($params['id'])) {
-            return $this->get400();
-        }
-
-        $values = [];
-        foreach ($this->fields as $key => $field) {
-            if (isset($params[$field])) {
-                $values[] = ['=', $key - 1, $params[$field]];
+            if ($this->repo->update($id, $params)) {
+                return $this->jsonResponse('{}');
+            }
+            else {
+                return $this->get404();
             }
         }
-        $this->space->update($id, $values);
-        return $this->jsonResponse('{}');
+        catch (Exception $e) {
+            return $this->get400($e->getMessage());
+        }
     }
 
-
-    public function isCorrectId($id)
+    protected function isCorrectId($id)
     {
         return (string)(int)$id === (string)$id;
     }
 
-    public function get400($text = null)
+    protected function get400($text = null)
     {
         $response = new Response();
         if ($text) {
@@ -134,14 +122,14 @@ class ApiController extends Controller
         return $response;
     }
 
-    public function get404()
+    protected function get404()
     {
         $response = new Response();
         $response->setStatusCode(404);
         return $response;
     }
 
-    public function customValidate($request, $rules)
+    protected function customValidate($request, $rules)
     {
         try {
             $this->validate($request, $rules);
@@ -152,7 +140,7 @@ class ApiController extends Controller
         return true;
     }
 
-    public function jsonResponse($json)
+    protected function jsonResponse($json)
     {
         return response($json)
             ->header('Content-Type', 'application/json')
