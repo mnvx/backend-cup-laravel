@@ -73,3 +73,5 @@ box.schema.user.grant('guest', 'read,write', 'space', 'visit')
 
 
 box.schema.user.grant('guest', 'read', 'space', '_space')
+
+box.schema.user.grant('guest', 'read,write,execute', 'universe')
