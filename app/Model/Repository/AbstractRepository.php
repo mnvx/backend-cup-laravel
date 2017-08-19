@@ -6,19 +6,13 @@ use Exception;
 use Tarantool\Client\Client;
 use Tarantool\Client\Connection\StreamConnection;
 use Tarantool\Client\Packer\PurePacker;
-use Tarantool\Client\Schema\Space;
 
-class AbstractRepository
+abstract class AbstractRepository
 {
     /**
      * @var Client
      */
     protected $client;
-
-    /**
-     * @var Space
-     */
-    protected $space;
 
     /**
      * @var string Abstract. Override it!
@@ -34,7 +28,6 @@ class AbstractRepository
     {
         $conn = new StreamConnection('tcp://' . env('TARANTOOL_HOST') . ':' . env('TARANTOOL_PORT'));
         $this->client = new Client($conn, new PurePacker());
-        $this->space = $this->client->getSpace($this->spaceName);
     }
 
     /**
@@ -48,7 +41,10 @@ class AbstractRepository
             throw new Exception;
         }
 
-        $data = $this->space->select([(int)$id])->getData();
+        $sql = 'SELECT * FROM ' . $this->spaceName . ' WHERE id = ' . $id;
+        $data = $this->client
+                ->evaluate('return box.sql.execute([[' . $sql . ';]])')
+                ->getData()[0] ?? [];
 
         $entity = [];
         foreach ($data[0] ?? [] as $key => $value) {
@@ -63,17 +59,7 @@ class AbstractRepository
      * @return boolean
      * @throws Exception
      */
-    public function insert($params)
-    {
-        $values = [];
-        foreach ($this->fields as $field) {
-            $values[] = $params[$field];
-        }
-
-        $this->space->insert($values);
-
-        return true;
-    }
+    abstract public function insert($params);
 
     /**
      * @param int $id
@@ -81,32 +67,15 @@ class AbstractRepository
      * @return boolean
      * @throws Exception
      */
-    public function update($id, $params)
-    {
-        if (!$this->isCorrectId($id)) {
-            throw new Exception;
-        }
-        $id = (int)$id;
-
-        $this->space->select([$id]);
-
-        if (isset($params['id'])) {
-            return false;
-        }
-
-        $values = [];
-        foreach ($this->fields as $key => $field) {
-            if (isset($params[$field])) {
-                $values[] = ['=', $key - 1, $params[$field]];
-            }
-        }
-        $this->space->update($id, $values);
-
-        return true;
-    }
+    abstract public function update($id, $params);
 
     protected function isCorrectId($id)
     {
         return (string)(int)$id === (string)$id;
+    }
+
+    protected function quote($value)
+    {
+        return str_replace("'", "\\'", $value);
     }
 }

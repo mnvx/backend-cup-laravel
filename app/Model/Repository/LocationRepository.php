@@ -2,6 +2,8 @@
 
 namespace App\Model\Repository;
 
+use Exception;
+
 class LocationRepository extends AbstractRepository
 {
     protected $spaceName = 'location';
@@ -63,4 +65,60 @@ class LocationRepository extends AbstractRepository
 
     }
 
+    /**
+     * @param array $params
+     * @return boolean
+     * @throws Exception
+     */
+    public function insert($params)
+    {
+        $sql = 'INSERT INTO ' . $this->spaceName . ' (' . implode(', ', $this->fields) . ')
+        VALUES (' . $params['id'] . ', ' .
+            "'" . $this->quote($params['place']) . "', " .
+            "'" . $this->quote($params['country']) . "', " .
+            "'" . $this->quote($params['city']) . "', " .
+            $params['distance'] .
+            ')';
+        $this->client->evaluate('box.sql.execute([[' . $sql . ';]])');
+        return true;
+    }
+
+    /**
+     * @param int $id
+     * @param array $params
+     * @return boolean
+     * @throws Exception
+     */
+    public function update($id, $params)
+    {
+        if (!$this->isCorrectId($id)) {
+            throw new Exception;
+        }
+        $id = (int)$id;
+
+        $this->find($id);
+
+        if (isset($params['id'])) {
+            return false;
+        }
+
+        $sql = 'UPDATE ' . $this->spaceName . ' SET ';
+        $set = [];
+        if (isset($params['place'])) {
+            $set[] = " place = '" . $this->quote($params['place']) . "'";
+        }
+        if (isset($params['country'])) {
+            $set[] = " country = '" . $this->quote($params['country']) . "'";
+        }
+        if (isset($params['city'])) {
+            $set[] = " city = '" . $this->quote($params['city']) . "'";
+        }
+        if (isset($params['distance'])) {
+            $set[] = " distance = " . $params['distance'];
+        }
+        $sql .= implode(', ', $set) . ' WHERE id = ' . $id;
+        $this->client->evaluate('box.sql.execute([[' . $sql . ';]])');
+
+        return true;
+    }
 }
