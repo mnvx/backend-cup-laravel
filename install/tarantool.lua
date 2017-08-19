@@ -6,72 +6,34 @@ box.cfg {
     wal_mode = 'none',
 }
 
-box.schema.space.create('profile', {
-    id = 1000,
-    field_count = 6,
-    temporary = true,
-})
-box.space.profile:create_index('id', {
-    type = 'hash',
-    parts = {1, 'integer'}
-})
-box.space.profile:create_index('birth_date', {
-    type = 'tree',
-    unique = false,
-    parts = {6, 'integer'}
-})
-box.schema.user.grant('guest', 'read,write', 'space', 'profile')
+box.sql.execute([[CREATE TABLE profile (
+  id INTEGER PRIMARY KEY,
+  email character varying(100) NOT NULL,
+  first_name character varying(50) NOT NULL,
+  last_name character varying(50) NOT NULL,
+  gender character varying(1) NOT NULL,
+  birth_date integer NOT NULL,
+  CONSTRAINT profile_birth_date_check CHECK (birth_date >= -1262311200 AND birth_date < 915224400),
+  CONSTRAINT profile_gender_check CHECK (gender IN ('m', 'f'))
+);]])
 
+box.sql.execute([[CREATE TABLE location (
+  id INTEGER PRIMARY KEY,
+  place text NOT NULL,
+  country character varying(50) NOT NULL,
+  city character varying(50) NOT NULL,
+  distance integer NOT NULL
+);]])
 
-box.schema.space.create('location', {
-    id = 2000,
-    field_count = 5,
-    temporary = true
-})
-box.space.location:create_index('id', {
-    type = 'hash',
-    parts = {1, 'integer'}
-})
-box.space.location:create_index('country', {
-    type = 'tree',
-    unique = false,
-    parts = {3, 'string'}
-})
-box.space.location:create_index('distance', {
-    type = 'tree',
-    unique = false,
-    parts = {5, 'integer'}
-})
-box.schema.user.grant('guest', 'read,write', 'space', 'location')
-
-
-box.schema.space.create('visit', {
-    id = 3000,
-    field_count = 5,
-    temporary = true
-})
-box.space.visit:create_index('id', {
-    type = 'hash',
-    parts = {1, 'integer'}
-})
-box.space.visit:create_index('location', {
-    type = 'tree',
-    unique = false,
-    parts = {2, 'integer'}
-})
-box.space.visit:create_index('user', {
-    type = 'tree',
-    unique = false,
-    parts = {3, 'integer'}
-})
-box.space.visit:create_index('visited_at', {
-    type = 'tree',
-    unique = false,
-    parts = {4, 'integer'}
-})
-box.schema.user.grant('guest', 'read,write', 'space', 'visit')
-
+box.sql.execute([[CREATE TABLE visit (
+  id INTEGER PRIMARY KEY,
+  location integer NOT NULL,
+  user integer NOT NULL,
+  visited_at integer NOT NULL,
+  mark smallint NOT NULL,
+  CONSTRAINT visit_mark_check CHECK (mark >= 0 AND mark <= 5),
+  CONSTRAINT visit_visited_at_check CHECK (visited_at >= 946674000 AND visited_at < 1420146000)
+);]])
 
 box.schema.user.grant('guest', 'read', 'space', '_space')
-
 box.schema.user.grant('guest', 'read,write,execute', 'universe')
