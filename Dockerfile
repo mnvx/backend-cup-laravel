@@ -61,13 +61,13 @@ RUN sed -i 's/;opcache.enable=0/opcache.enable=1/g' /etc/php/7.1/fpm/php.ini && 
 
 # Install Tarantool
 RUN curl http://download.tarantool.org/tarantool/1.8/gpgkey | sudo apt-key add - && \
-    release=`lsb_release -c -s` && \
+    release=xenial && \
     apt-get update && \
     apt-get -y install apt-transport-https
 RUN rm -f /etc/apt/sources.list.d/*tarantool*.list
 RUN touch /etc/apt/sources.list.d/tarantool_1_8.list
-RUN release=`lsb_release -c -s` && echo "deb http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
-RUN release=`lsb_release -c -s` && echo "deb-src http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
+RUN release=xenial && echo "deb http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
+RUN release=xenial && echo "deb-src http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
 RUN apt-get update && \
     apt-get -y install tarantool
     #mkdir /var/lib/tarantool
