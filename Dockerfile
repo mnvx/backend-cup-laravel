@@ -66,8 +66,8 @@ RUN curl http://download.tarantool.org/tarantool/1.8/gpgkey | sudo apt-key add -
     apt-get -y install apt-transport-https
 RUN rm -f /etc/apt/sources.list.d/*tarantool*.list
 RUN touch /etc/apt/sources.list.d/tarantool_1_8.list
-RUN release=xenial && echo "deb http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
-RUN release=xenial && echo "deb-src http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_7.list
+RUN release=xenial && echo "deb http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_8.list
+RUN release=xenial && echo "deb-src http://download.tarantool.org/tarantool/1.8/ubuntu/ $release main" >> /etc/apt/sources.list.d/tarantool_1_8.list
 RUN apt-get update && \
     apt-get -y install tarantool
     #mkdir /var/lib/tarantool
@@ -89,7 +89,8 @@ EXPOSE 3301
 
 ADD ./install/data.zip /tmp/data/data.zip
 
-CMD service tarantool start ; \
+CMD tarantool --version ; \
+    service tarantool start ; \
     service php7.1-fpm start ; \
     php /var/www/cup-backend/artisan cup:load-data ; \
     service nginx start
