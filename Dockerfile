@@ -16,9 +16,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E5267A6C C300EE8C &
 		libcurl3 \
 		libcurl3-dev \
 		nginx \
-		mysql-server \
-		postgresql \
-		postgresql-contrib \
 		php7.1-fpm \
 		php7.1-cli \
 		#php7.1-gd \
@@ -29,8 +26,6 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E5267A6C C300EE8C &
 		php7.1-mbstring \
 		php7.1-zip \
 		php7.1-xml \
-		php7.1-mysql \
-		php7.1-pgsql \
 		#redis-server \
 		sudo \
 		git \
@@ -88,26 +83,13 @@ ADD ./ /var/www/cup-backend
 RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
 RUN php /var/www/cup-backend/artisan key:generate
 
-ADD ./install/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
-RUN service postgresql start && \
-# service mysql start && \
-#    service postgresql start && \
-    psql -U postgres -c 'CREATE DATABASE cup;' && \
-#    mysql -uroot -e "CREATE DATABASE cup" && \
-    php /var/www/cup-backend/artisan migrate && \
-    service postgresql stop
-#    service mysql stop
-
 # Expose volumes and ports
 EXPOSE 80
 EXPOSE 3301
 
 ADD ./install/data.zip /tmp/data/data.zip
 
-CMD service postgresql start ; \
-#   service mysql start ; \
-#   service postgresql start ; \
-    service tarantool start ; \
+CMD service tarantool start ; \
     service php7.1-fpm start ; \
     php /var/www/cup-backend/artisan cup:load-data ; \
     service nginx start
