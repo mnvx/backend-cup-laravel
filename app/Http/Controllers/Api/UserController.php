@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\User;
-use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -34,31 +32,14 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        $entity = User::find($id);
+        $entity = $this->repo->find($id);
 
         if (!$entity) {
             return $this->get404();
         }
 
-        $query = Visit::select('mark', 'visited_at', 'place')
-            ->where('user', '=', $id)
-            ->join('location', 'location.id', '=', 'visit.location');
-
-        if ($fromDate = request()->get('fromDate')) {
-            $query->where('visited_at', '>', $fromDate);
-        }
-        if ($toDate = request()->get('toDate')) {
-            $query->where('visited_at', '<', $toDate);
-        }
-        if ($country = request()->get('country')) {
-            $query->where('country', '=', $country);
-        }
-        if ($distance = request()->get('toDistance')) {
-            $query->where('distance', '<', $distance);
-        }
-        $query->orderBy('visited_at');
-
-        return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
+        $data = $this->repo->getVisits($id, $request->all());
+        return $this->jsonResponse('{"visits": ' . json_encode($data) . '}');
     }
 
     /**

@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\Location;
-use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LocationController extends ApiController
 {
@@ -35,48 +32,14 @@ class LocationController extends ApiController
             return $this->get404();
         }
 
-        $entity = Location::find($id);
+        $entity = $this->repo->find($id);
 
         if (!$entity) {
             return $this->get404();
         }
 
-        $query = Visit::select(DB::raw('COALESCE(AVG(mark), 0) as res'))
-            ->where('location', '=', $id);
-
-        if ($fromDate = request()->get('fromDate')) {
-            $query->where('visited_at', '>', $fromDate);
-        }
-        if ($toDate = request()->get('toDate')) {
-            $query->where('visited_at', '<', $toDate);
-        }
-
-        $fromAge = request()->get('fromAge');
-        $toAge = request()->get('toAge');
-        $gender = request()->get('gender');
-
-        if ($fromAge || $toAge || $gender) {
-            $query->join('profile', 'profile.id', '=', 'visit.user');
-
-            $time = time();
-            if ($fromAge && $toAge) {
-                $query->whereRaw('profile.birth_date BETWEEN ' . ($time - $fromAge * 31536000) . ' AND ' . ($time - $toAge * 31536000));
-            }
-            elseif ($fromAge) {
-                $query->whereRaw('profile.birth_date < ' . ($time - $fromAge * 31536000));
-            }
-            elseif ($toAge) {
-                $query->whereRaw('profile.birth_date > ' . ($time - $toAge * 31536000));
-            }
-
-            if ($gender) {
-                $query->where('profile.gender', '=', $gender);
-            }
-        }
-
-        $res = $query->first();
-
-        return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
+        $avg = $this->repo->getAverage($id, $request->all());
+        return $this->jsonResponse('{"avg": ' . round($avg, 5) . '}');
     }
 
     public function create(Request $request)

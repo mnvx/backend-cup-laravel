@@ -51,7 +51,7 @@ class AbstractRepository
         $data = $this->space->select([(int)$id])->getData();
 
         $entity = [];
-        foreach ($data[0] as $key => $value) {
+        foreach ($data[0] ?? [] as $key => $value) {
             $entity[$this->fields[$key + 1]] = $value;
         }
 
