@@ -60,10 +60,9 @@ class LocationController extends ApiController
     public function edit($id, Request $request)
     {
         if (!$this->customValidate($request, [
-            'place' => 'required',
-            'country' => 'required|max:50',
-            'city' => 'required|max:50',
-            'distance' => 'required|int',
+            'country' => 'max:50',
+            'city' => 'max:50',
+            'distance' => 'int',
         ])) {
             return $this->get400();
         }

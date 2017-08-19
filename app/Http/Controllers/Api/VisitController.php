@@ -34,10 +34,10 @@ class VisitController extends ApiController
     public function edit($id, Request $request)
     {
         if (!$this->customValidate($request, [
-            'location' => 'required|int',
-            'user' => 'required|int',
-            'visited_at' => 'required|int|min:946674000|max:1420145999',
-            'mark' => 'required|int|min:0|max:5',
+            'location' => 'int',
+            'user' => 'int',
+            'visited_at' => 'int|min:946674000|max:1420145999',
+            'mark' => 'int|min:0|max:5',
         ])) {
             return $this->get400();
         }
