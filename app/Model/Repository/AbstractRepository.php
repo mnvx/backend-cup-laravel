@@ -6,6 +6,7 @@ use Exception;
 use Tarantool\Client\Client;
 use Tarantool\Client\Connection\StreamConnection;
 use Tarantool\Client\Packer\PurePacker;
+use Tarantool\Client\Schema\Space;
 
 abstract class AbstractRepository
 {
@@ -13,6 +14,11 @@ abstract class AbstractRepository
      * @var Client
      */
     protected $client;
+
+    /**
+     * @var Space
+     */
+    protected $space;
 
     /**
      * @var string Abstract. Override it!
@@ -28,14 +34,25 @@ abstract class AbstractRepository
     {
         $conn = new StreamConnection('tcp://' . env('TARANTOOL_HOST') . ':' . env('TARANTOOL_PORT'));
         $this->client = new Client($conn, new PurePacker());
+        $this->space = $this->client->getSpace($this->spaceName);
     }
 
     /**
      * @param int $id
+     * @return bool
      */
     public function exists($id)
     {
-        
+        try {
+            $data = $this->space->select([(int)$id])->getData();
+            if (empty($data)) {
+                return false;
+            }
+        }
+        catch (Exception $e) {
+            return false;
+        }
+        return true;
     }
 
     /**

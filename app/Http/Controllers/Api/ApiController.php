@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Model\Repository\AbstractRepository;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 use Tarantool\Client\Client;
@@ -104,6 +105,8 @@ class ApiController extends Controller
     /**
      * @param int $id
      * @param array $params
+     * @param callable $validation
+     * @param Request $request
      * @return Response
      */
     public function update($id, $params, $validation, $request)
@@ -116,7 +119,7 @@ class ApiController extends Controller
             return $this->get404();
         }
 
-        if ($validation($request)) {
+        if (!$validation($request)) {
             return $this->get400();
         }
 

@@ -44,29 +44,29 @@ class LocationController extends ApiController
 
     public function create(Request $request)
     {
-        if (!$this->customValidate($request, [
-            'id' => 'required|int',
-            'place' => 'required',
-            'country' => 'required|max:50',
-            'city' => 'required|max:50',
-            'distance' => 'required|int',
-        ])) {
-            return $this->get400();
-        }
+        $validation = function ($request) {
+            return $this->customValidate($request, [
+                'id' => 'required|int',
+                'place' => 'required',
+                'country' => 'required|max:50',
+                'city' => 'required|max:50',
+                'distance' => 'required|int',
+            ]);
+        };
 
-        return $this->insert($request->json()->all());
+        return $this->insert($request->json()->all(), $validation, $request);
     }
 
     public function edit($id, Request $request)
     {
-        if (!$this->customValidate($request, [
-            'country' => 'max:50',
-            'city' => 'max:50',
-            'distance' => 'int',
-        ])) {
-            return $this->get400();
-        }
+        $validation = function ($request) {
+            return $this->customValidate($request, [
+                'country' => 'max:50',
+                'city' => 'max:50',
+                'distance' => 'int',
+            ]);
+        };
 
-        return $this->update($id, $request->json()->all());
+        return $this->update($id, $request->json()->all(), $validation, $request);
     }
 }

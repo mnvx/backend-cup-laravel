@@ -49,18 +49,18 @@ class UserController extends ApiController
      */
     public function create(Request $request)
     {
-        if (!$this->customValidate($request, [
-            'id' => 'required|int',
-            'email' => 'required|max:100',
-            'first_name' => 'required|max:50',
-            'last_name' => 'required|max:50',
-            'gender' => 'required|in:m,f',
-            'birth_date' => 'required|int',
-        ])) {
-            return $this->get400();
-        }
+        $validation = function ($request) {
+            return $this->customValidate($request, [
+                'id' => 'required|int',
+                'email' => 'required|max:100',
+                'first_name' => 'required|max:50',
+                'last_name' => 'required|max:50',
+                'gender' => 'required|in:m,f',
+                'birth_date' => 'required|int',
+            ]);
+        };
 
-        return $this->insert($request->json()->all());
+        return $this->insert($request->json()->all(), $validation, $request);
     }
 
     /**
@@ -72,17 +72,13 @@ class UserController extends ApiController
     public function edit($id, Request $request)
     {
         $validation = function ($request) {
-            if (!$this->customValidate($request, [
+            return $this->customValidate($request, [
                 'email'      => 'max:100',
                 'first_name' => 'max:50',
                 'last_name'  => 'max:50',
                 'gender'     => 'in:m,f',
                 'birth_date' => 'int',
-            ])
-            ) {
-                return false;
-            }
-            return true;
+            ]);
         };
 
         return $this->update($id, $request->json()->all(), $validation, $request);
