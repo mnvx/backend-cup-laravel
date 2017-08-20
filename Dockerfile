@@ -81,6 +81,7 @@ ADD ./ /var/www/cup-backend
 #RUN sudo -u www-data composer update --working-dir="/var/www/cup-backend"
 
 RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
+RUN rm /etc/tarantool/instances.enabled/example.lua
 RUN php /var/www/cup-backend/artisan key:generate
 
 # Expose volumes and ports

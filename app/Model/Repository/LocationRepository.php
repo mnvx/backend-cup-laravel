@@ -96,12 +96,6 @@ class LocationRepository extends AbstractRepository
         }
         $id = (int)$id;
 
-        $this->find($id);
-
-        if (isset($params['id'])) {
-            return false;
-        }
-
         $sql = 'UPDATE ' . $this->spaceName . ' SET ';
         $set = [];
         if (isset($params['place'])) {

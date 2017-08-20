@@ -32,15 +32,19 @@ abstract class AbstractRepository
 
     /**
      * @param int $id
+     */
+    public function exists($id)
+    {
+        
+    }
+
+    /**
+     * @param int $id
      * @return array Entity
      * @throws Exception
      */
     public function find($id)
     {
-        if (!$this->isCorrectId($id)) {
-            throw new Exception;
-        }
-
         $sql = 'SELECT * FROM ' . $this->spaceName . ' WHERE id = ' . $id;
         $data = $this->client
                 ->evaluate('return box.sql.execute([[' . $sql . ';]])')
@@ -49,6 +53,10 @@ abstract class AbstractRepository
         $entity = [];
         foreach ($data[0] ?? [] as $key => $value) {
             $entity[$this->fields[$key + 1]] = $value;
+        }
+
+        if (empty($entity)) {
+            throw new Exception;
         }
 
         return $entity;

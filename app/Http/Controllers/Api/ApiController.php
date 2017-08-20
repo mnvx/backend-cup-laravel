@@ -55,6 +55,10 @@ class ApiController extends Controller
      */
     public function get($id)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
         try {
             if ($entity = $this->repo->find($id)) {
                 return $this->jsonResponse(json_encode($entity));
@@ -74,6 +78,16 @@ class ApiController extends Controller
      */
     public function insert($params)
     {
+        if (!$this->isCorrectId($params['id'] ?? null)) {
+            return $this->get400();
+        }
+
+        foreach ($params as $value) {
+            if ($value === null) {
+                return $this->get404();
+            }
+        }
+
         try {
             if ($this->repo->insert($params)) {
                 return $this->jsonResponse('{}');
@@ -92,8 +106,24 @@ class ApiController extends Controller
      * @param array $params
      * @return Response
      */
-    public function update($id, $params)
+    public function update($id, $params, $validation, $request)
     {
+        if (!$this->isCorrectId($id)) {
+            return $this->get404();
+        }
+
+        if (!$this->repo->exists($id)) {
+            return $this->get404();
+        }
+
+        if ($validation($request)) {
+            return $this->get400();
+        }
+
+        if (isset($params['id'])) {
+            return $this->get400();
+        }
+
         try {
             if ($this->repo->update($id, $params)) {
                 return $this->jsonResponse('{}');

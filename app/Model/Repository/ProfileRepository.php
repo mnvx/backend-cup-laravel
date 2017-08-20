@@ -88,12 +88,11 @@ class ProfileRepository extends AbstractRepository
      */
     public function update($id, $params)
     {
-        if (!$this->isCorrectId($id)) {
-            throw new Exception;
-        }
         $id = (int)$id;
 
-        $this->find($id);
+        if (!$this->find($id)) {
+            return false;
+        }
 
         if (isset($params['id'])) {
             return false;

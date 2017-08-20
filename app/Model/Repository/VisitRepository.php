@@ -47,7 +47,9 @@ class VisitRepository extends AbstractRepository
         }
         $id = (int)$id;
 
-        $this->find($id);
+        if (!$this->find($id)) {
+            return false;
+        }
 
         if (isset($params['id'])) {
             return false;
