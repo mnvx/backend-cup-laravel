@@ -91,7 +91,7 @@ class ApiController extends Controller
 
         foreach ($params as $value) {
             if ($value === null) {
-                return $this->get404();
+                return $this->get400();
             }
         }
 
@@ -135,7 +135,7 @@ class ApiController extends Controller
 
         foreach ($params as $value) {
             if ($value === null) {
-                return $this->get404();
+                return $this->get400();
             }
         }
 
