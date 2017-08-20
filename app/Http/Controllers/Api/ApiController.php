@@ -150,9 +150,9 @@ class ApiController extends Controller
     protected function get400($text = null)
     {
         $response = new Response();
-        if ($text) {
-            $response->header('error-text', $text);
-        }
+//        if ($text) {
+//            $response->header('error-text', $text);
+//        }
         $response->setStatusCode(400);
         return $response;
     }

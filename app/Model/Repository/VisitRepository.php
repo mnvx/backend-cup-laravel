@@ -56,6 +56,7 @@ class VisitRepository extends AbstractRepository
         }
 
         $sql = 'UPDATE ' . $this->spaceName . ' SET ';
+
         $set = [];
         if (isset($params['location'])) {
             $set[] = " location = " . $params['location'];
@@ -69,6 +70,11 @@ class VisitRepository extends AbstractRepository
         if (isset($params['mark'])) {
             $set[] = " mark = " . $params['mark'];
         }
+
+        if (empty($set)) {
+            throw new Exception('no fields for update');
+        }
+
         $sql .= implode(', ', $set) . ' WHERE id = ' . $id;
         $this->client->evaluate('box.sql.execute([[' . $sql . ';]])');
 
