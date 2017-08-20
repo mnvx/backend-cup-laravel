@@ -83,16 +83,8 @@ class ApiController extends Controller
             return $this->get400();
         }
 
-        foreach ($params as $value) {
-            if ($value === null) {
-                return $this->get404();
-            }
-        }
-
-        foreach ($params as $value) {
-            if ($value === null) {
-                return $this->get400();
-            }
+        if (in_array(null, $params, true)) {
+            return $this->get400();
         }
 
         try {
@@ -133,10 +125,8 @@ class ApiController extends Controller
             return $this->get400();
         }
 
-        foreach ($params as $value) {
-            if ($value === null) {
-                return $this->get400();
-            }
+        if (in_array(null, $params, true)) {
+            return $this->get400();
         }
 
         try {
