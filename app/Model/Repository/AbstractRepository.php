@@ -62,13 +62,18 @@ abstract class AbstractRepository
      */
     public function find($id)
     {
-        $sql = 'SELECT * FROM ' . $this->spaceName . ' WHERE id = ' . $id;
-        $data = $this->client
-                ->evaluate('return box.sql.execute([[' . $sql . ';]])')
-                ->getData()[0] ?? [];
+        try {
+            $data = $this->space->select([(int)$id])->getData()[0] ?? null;
+            if (empty($data)) {
+                return null;
+            }
+        }
+        catch (Exception $e) {
+            return null;
+        }
 
         $entity = [];
-        foreach ($data[0] ?? [] as $key => $value) {
+        foreach ($data as $key => $value) {
             $entity[$this->fields[$key + 1]] = $value;
         }
 
