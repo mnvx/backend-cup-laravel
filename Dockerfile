@@ -89,10 +89,10 @@ EXPOSE 80
 
 ADD ./install/data.zip /tmp/data/data.zip
 
-CMD date ; service postgresql start ; \
+CMD service postgresql start ; \
 #date ; service mysql start ; \
 #date ; service postgresql start ; \
-    date ; service php7.1-fpm start ; \
-    date ; php /var/www/cup-backend/artisan cup:load-data ; \
-    date ; service nginx start ; \
-    date
+    service php7.1-fpm start ; \
+    php /var/www/cup-backend/artisan cup:load-data ; \
+    php /var/www/cup-backend/artisan react-serve --listen=[::]:80
+    #service nginx start
