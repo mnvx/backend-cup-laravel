@@ -35,5 +35,6 @@ box.sql.execute([[CREATE TABLE visit (
   CONSTRAINT visit_visited_at_check CHECK (visited_at >= 946674000 AND visited_at < 1420146000)
 );]])
 
-box.schema.user.grant('guest', 'read', 'space', '_space')
-box.schema.user.grant('guest', 'read,write,execute', 'universe')
+box.schema.user.grant('guest', 'read,write', 'space', '_space')
+box.schema.user.grant('guest', 'read,write', 'space', '_index')
+box.schema.user.grant('guest', 'read,write,create,drop,alter,execute', 'universe')
