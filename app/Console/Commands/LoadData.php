@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Model\Entity\Location;
-use App\Model\Entity\User;
-use App\Model\Entity\Visit;
 use App\Model\Repository\LocationRepository;
 use App\Model\Repository\ProfileRepository;
 use App\Model\Repository\VisitRepository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Tarantool\Client\Client;
+use Tarantool\Client\Connection\StreamConnection;
+use Tarantool\Client\Packer\PurePacker;
 
 class LoadData extends Command
 {
@@ -30,6 +30,11 @@ class LoadData extends Command
     protected $path = '/tmp/data/data.zip';
 
     /**
+     * @var Client
+     */
+    protected $client;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
@@ -38,15 +43,24 @@ class LoadData extends Command
     {
         echo 'load_files' . PHP_EOL;
 
-        $this->load('users', new ProfileRepository());
-        $this->load('locations', new LocationRepository());
-        $this->load('visits', new VisitRepository());
+        $conn = new StreamConnection('tcp://' . env('TARANTOOL_HOST') . ':' . env('TARANTOOL_PORT'));
+        $this->client = new Client($conn, new PurePacker());
 
-//        $this->loadUsers();
-//        $this->loadLocations();
-//        $this->loadVisits();
+//        $this->load('users', new ProfileRepository());
+//        $this->load('locations', new LocationRepository());
+//        $this->load('visits', new VisitRepository());
+
+        $this->loadUsers();
+        $this->loadLocations();
+        $this->loadVisits();
 
         echo 'files_loaded' . PHP_EOL;
+    }
+
+    protected function quote($value)
+    {
+        //return DB::connection()->getPdo()->quote($value);
+        return "'" . str_replace("'", "\\'", $value) . "'";
     }
 
     protected function load($entityName, $repo)
@@ -113,9 +127,9 @@ class LoadData extends Command
                 $sql .= '(' .
                     $item['id'] . ", " .
                     $item['birth_date'] . ", " .
-                    DB::connection()->getPdo()->quote($item['email']) . ", " .
-                    DB::connection()->getPdo()->quote($item['first_name']) . ", " .
-                    DB::connection()->getPdo()->quote($item['last_name']) . ", " .
+                    $this->quote($item['email']) . ", " .
+                    $this->quote($item['first_name']) . ", " .
+                    $this->quote($item['last_name']) . ", " .
                     "'" . $item['gender'] . "'" .
                 ')';
 
@@ -160,9 +174,9 @@ class LoadData extends Command
 
                 $sql .= '(' .
                     $item['id'] . ", " .
-                    DB::connection()->getPdo()->quote($item['place']) . ", " .
-                    DB::connection()->getPdo()->quote($item['country']) . ", " .
-                    DB::connection()->getPdo()->quote($item['city']) . ", " .
+                    $this->quote($item['place']) . ", " .
+                    $this->quote($item['country']) . ", " .
+                    $this->quote($item['city']) . ", " .
                     $item['distance'] .
                 ')';
 
@@ -228,7 +242,8 @@ class LoadData extends Command
         $completed = false;
         while (!$completed) {
             try {
-                DB::statement($sql);
+                $this->client->evaluate('box.sql.execute([[' . $sql . ';]])');
+                //DB::statement($sql);
                 $completed = true;
             }
             catch (\Throwable $e) {
@@ -244,8 +259,8 @@ class LoadData extends Command
      */
     protected function alterSequence($tableName)
     {
-        $newId = DB::table($tableName)->select(DB::raw('MAX(id) as max_id'))->first()->max_id + 1;
-        DB::statement('ALTER SEQUENCE ' . $tableName . '_id_seq' . ' RESTART WITH ' . $newId);
+//        $newId = DB::table($tableName)->select(DB::raw('MAX(id) as max_id'))->first()->max_id + 1;
+//        DB::statement('ALTER SEQUENCE ' . $tableName . '_id_seq' . ' RESTART WITH ' . $newId);
     }
 
 }
