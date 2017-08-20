@@ -57,8 +57,8 @@ class VisitRepository extends AbstractRepository
 
         $sql = 'UPDATE ' . $this->spaceName . ' SET ';
         $set = [];
-        if (isset($params['place'])) {
-            $set[] = " place = '" . $this->quote($params['place']) . "'";
+        if (isset($params['location'])) {
+            $set[] = " location = " . $params['location'];
         }
         if (isset($params['user'])) {
             $set[] = " user = " . $params['user'];

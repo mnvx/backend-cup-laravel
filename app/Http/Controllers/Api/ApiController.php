@@ -89,6 +89,12 @@ class ApiController extends Controller
             }
         }
 
+        foreach ($params as $value) {
+            if ($value === null) {
+                return $this->get404();
+            }
+        }
+
         try {
             if ($this->repo->insert($params)) {
                 return $this->jsonResponse('{}');
@@ -125,6 +131,12 @@ class ApiController extends Controller
 
         if (isset($params['id'])) {
             return $this->get400();
+        }
+
+        foreach ($params as $value) {
+            if ($value === null) {
+                return $this->get404();
+            }
         }
 
         try {
