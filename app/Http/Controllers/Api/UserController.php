@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
-use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class UserController extends ApiController
@@ -66,10 +65,9 @@ class UserController extends ApiController
         return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
     }
 
-    public function create(ServerRequestInterface $request)
+    public function create(Request $request)
     {
-        $requestData = $request->getParsedBody();
-        //$requestData = request()->json()->all()
+        $requestData = $request->json()->all();
 
         try {
             User::insert($requestData);
@@ -80,9 +78,9 @@ class UserController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id, ServerRequestInterface $request)
+    public function update($id, Request $request)
     {
-        $requestData = $request->getParsedBody();
+        $requestData = $request->json()->all();
 
         if (!$this->isCorrectId($id)) {
             return $this->get404();

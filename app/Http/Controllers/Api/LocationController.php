@@ -8,7 +8,6 @@ use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class LocationController extends ApiController
@@ -91,9 +90,9 @@ class LocationController extends ApiController
         return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
     }
 
-    public function create(ServerRequestInterface $request)
+    public function create(Request $request)
     {
-        $requestData = $request->getParsedBody();
+        $requestData = $request->json()->all();
 
         try {
             Location::insert($requestData);
@@ -104,9 +103,9 @@ class LocationController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id, ServerRequestInterface $request)
+    public function update($id, Request $request)
     {
-        $requestData = $request->getParsedBody();
+        $requestData = $request->json()->all();
 
         if (!$this->isCorrectId($id)) {
             return $this->get404();
