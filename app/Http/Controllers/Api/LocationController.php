@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Location;
 use App\Model\Entity\Visit;
+use DateInterval;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class LocationController extends ApiController
@@ -64,15 +67,18 @@ class LocationController extends ApiController
         if ($fromAge || $toAge || $gender) {
             $query->join('profile', 'profile.id', '=', 'visit.user');
 
-            $time = time();
             if ($fromAge && $toAge) {
-                $query->whereRaw('profile.birth_date BETWEEN ' . ($time - $fromAge * 31536000) . ' AND ' . ($time - $toAge * 31536000));
+                $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
+                $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
+                $query->whereRaw('profile.birth_date BETWEEN ' . $to . ' AND ' . $from);
             }
             elseif ($fromAge) {
-                $query->whereRaw('profile.birth_date < ' . ($time - $fromAge * 31536000));
+                $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
+                $query->whereRaw('profile.birth_date < ' . $from);
             }
             elseif ($toAge) {
-                $query->whereRaw('profile.birth_date > ' . ($time - $toAge * 31536000));
+                $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
+                $query->whereRaw('profile.birth_date > ' . $to);
             }
 
             if ($gender) {
@@ -85,10 +91,12 @@ class LocationController extends ApiController
         return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
     }
 
-    public function create()
+    public function create(ServerRequestInterface $request)
     {
+        $requestData = $request->getParsedBody();
+
         try {
-            Location::insert(request()->json()->all());
+            Location::insert($requestData);
         }
         catch (Throwable $e) {
             return $this->get400();
@@ -96,8 +104,10 @@ class LocationController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id)
+    public function update($id, ServerRequestInterface $request)
     {
+        $requestData = $request->getParsedBody();
+
         if (!$this->isCorrectId($id)) {
             return $this->get404();
         }
@@ -108,9 +118,13 @@ class LocationController extends ApiController
             return $this->get404();
         }
 
+        if (isset($requestData['id'])) {
+            return $this->get400();
+        }
+
         try {
             Location::where('id', '=', $id)
-                ->update(request()->json()->all());
+                ->update($requestData);
         }
         catch (Throwable $e) {
             return $this->get400();

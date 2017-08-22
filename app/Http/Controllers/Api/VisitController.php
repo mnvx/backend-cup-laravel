@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Visit;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class VisitController extends ApiController
@@ -22,10 +23,11 @@ class VisitController extends ApiController
         return $this->jsonResponse($entity->toJson());
     }
 
-    public function create()
+    public function create(ServerRequestInterface $request)
     {
+        $requestData = $request->getParsedBody();
         try {
-            Visit::insert(request()->json()->all());
+            Visit::insert($requestData);
         }
         catch (Throwable $e) {
             return $this->get400();
@@ -33,8 +35,10 @@ class VisitController extends ApiController
         return $this->jsonResponse('{}');
     }
 
-    public function update($id)
+    public function update($id, ServerRequestInterface $request)
     {
+        $requestData = $request->getParsedBody();
+
         if (!$this->isCorrectId($id)) {
             return $this->get404();
         }
@@ -45,9 +49,13 @@ class VisitController extends ApiController
             return $this->get404();
         }
 
+        if (isset($requestData['id'])) {
+            return $this->get400();
+        }
+
         try {
             Visit::where('id', '=', $id)
-                ->update(request()->json()->all());
+                ->update($requestData);
         }
         catch (Throwable $e) {
             return $this->get400();
