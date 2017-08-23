@@ -67,6 +67,8 @@ RUN sed -i 's/;opcache.enable=0/opcache.enable=1/g' /etc/php/7.1/fpm/php.ini && 
 RUN apt-get update && apt-get install -y php7.1-cgi
 RUN sed -i 's/disable_functions = .*/disable_functions =/g' /etc/php/7.1/cgi/php.ini
 
+RUN sed -i 's/shared_buffers =.*/shared_buffers = 3GB/g' /etc/postgresql/9.5/main/postgresql.conf
+
 RUN chown www-data:www-data /var/www
 
 #RUN sudo -u www-data git clone https://github.com/mnvx/backend-cup-laravel /var/www/cup-backend
