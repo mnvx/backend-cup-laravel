@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\App;
 use Illuminate\Validation\ValidationException;
 
 class ApiController extends Controller

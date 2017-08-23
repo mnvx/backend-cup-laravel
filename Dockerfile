@@ -67,6 +67,8 @@ RUN sed -i 's/;opcache.enable=0/opcache.enable=1/g' /etc/php/7.1/fpm/php.ini && 
 RUN apt-get update && apt-get install -y php7.1-cgi
 RUN sed -i 's/disable_functions = .*/disable_functions =/g' /etc/php/7.1/cgi/php.ini
 
+RUN apt-get install -y redis-server
+
 RUN chown www-data:www-data /var/www
 
 #RUN sudo -u www-data git clone https://github.com/mnvx/backend-cup-laravel /var/www/cup-backend
@@ -79,7 +81,7 @@ RUN php /var/www/cup-backend/artisan key:generate
 
 ADD ./install/pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
 RUN service postgresql start && \
-# service mysql start && \
+#    service mysql start && \
 #    service postgresql start && \
     psql -U postgres -c 'CREATE DATABASE cup;' && \
 #    mysql -uroot -e "CREATE DATABASE cup" && \
@@ -92,12 +94,10 @@ EXPOSE 80
 
 ADD ./install/data.zip /tmp/data/data.zip
 
-CMD service postgresql start ; \
-#date ; service mysql start ; \
-#date ; service postgresql start ; \
-    service php7.1-fpm start ; \
+CMD service redis-server start ; \
+    service postgresql start ; \
+#    service mysql start ; \
+#    service postgresql start ; \
     php /var/www/cup-backend/artisan cup:load-data ; \
-#    php /var/www/cup-backend/artisan react-serve --listen=[::]:80
     cd /var/www/cup-backend ; \
     php ./vendor/bin/ppm start --bootstrap=laravel --port=80 --workers=4 --host=[::]
-    #service nginx start

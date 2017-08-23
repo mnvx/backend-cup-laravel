@@ -10,6 +10,7 @@
         "laravel/tinker": "~1.0",
         "php-pm/httpkernel-adapter": "dev-master",
         "php-pm/php-pm": "dev-master",
+        "predis/predis": "~1.0",
         "react/http": "dev-master#cd15204bd15d106d7832c680e4fb0ca0ce2f5e30",
         "symfony/psr-http-message-bridge": "^1.0",
         "zendframework/zend-diactoros": "^1.4"

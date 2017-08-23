@@ -6,6 +6,7 @@ use App\Model\Entity\Location;
 use App\Model\Entity\User;
 use App\Model\Entity\Visit;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 
 class LoadData extends Command
@@ -26,6 +27,8 @@ class LoadData extends Command
 
     protected $path = '/tmp/data/data.zip';
 
+    protected $redis;
+
     /**
      * Execute the console command.
      *
@@ -34,6 +37,8 @@ class LoadData extends Command
     public function handle()
     {
         echo 'load_files' . PHP_EOL;
+
+        $this->redis = App::make('Redis');
 
         $this->loadUsers();
         $this->loadLocations();
@@ -80,6 +85,8 @@ class LoadData extends Command
                     DB::connection()->getPdo()->quote($item['last_name']) . ", " .
                     "'" . $item['gender'] . "'" .
                 ')';
+
+                $this->redis->hset('user', $item['id'], json_encode($item));
 
                 $first = false;
             }
@@ -128,6 +135,8 @@ class LoadData extends Command
                     $item['distance'] .
                 ')';
 
+                $this->redis->hset('location', $item['id'], json_encode($item));
+
                 $first = false;
             }
 
@@ -174,6 +183,8 @@ class LoadData extends Command
                     $item['visited_at'] . ", " .
                     $item['mark'] .
                 ')';
+
+                $this->redis->hset('visit', $item['id'], json_encode($item));
 
                 $first = false;
             }

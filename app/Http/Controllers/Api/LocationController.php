@@ -7,15 +7,24 @@ use App\Model\Entity\Visit;
 use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class LocationController extends ApiController
 {
+    protected $collection = 'location';
+
     public function get($id)
     {
         if (!$this->isCorrectId($id)) {
             return $this->get404();
+        }
+
+        $redis = App::make('Redis');
+        $user = $redis->hget($this->collection, $id);
+        if ($user) {
+            return $this->jsonResponse($user);
         }
 
         $entity = Location::find($id);
@@ -23,6 +32,8 @@ class LocationController extends ApiController
         if (!$entity) {
             return $this->get404();
         }
+        $json = $entity->toJson();
+        $redis->hset($this->collection, $id, $json);
 
         return $this->jsonResponse($entity->toJson());
     }
@@ -100,6 +111,10 @@ class LocationController extends ApiController
         catch (Throwable $e) {
             return $this->get400();
         }
+
+        $redis = App::make('Redis');
+        $redis->hset($this->collection, $requestData['id'], $request->getContent());
+
         return $this->jsonResponse('{}');
     }
 
@@ -128,6 +143,9 @@ class LocationController extends ApiController
         catch (Throwable $e) {
             return $this->get400();
         }
+
+        $redis = App::make('Redis');
+        $redis->hset($this->collection, $id, json_encode($requestData + $entity->toArray()));
 
         return $this->jsonResponse('{}');
     }
