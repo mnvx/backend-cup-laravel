@@ -92,7 +92,7 @@ RUN service postgresql start && \
 # Expose volumes and ports
 EXPOSE 80
 
-ADD ./install/data.zip /tmp/data/data.zip
+#ADD ./install/data.zip /tmp/data/data.zip
 
 CMD service redis-server start ; \
     service postgresql start ; \

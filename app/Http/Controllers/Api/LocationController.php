@@ -3,102 +3,85 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\Location;
-use App\Model\Entity\Visit;
 use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use PDO;
 use Throwable;
 
 class LocationController extends ApiController
 {
     protected $collection = 'location';
 
-    public function get($id)
+    public function getAverage($id, Request $request)
     {
-        if (!$this->isCorrectId($id)) {
+        if (!ctype_digit($id)) {
             return $this->get404();
         }
 
         $redis = App::make('Redis');
-        $user = $redis->hget($this->collection, $id);
-        if ($user) {
-            return $this->jsonResponse($user);
-        }
-
-        $entity = Location::find($id);
-
+        $entity = $redis->hget($this->collection, $id);
         if (!$entity) {
             return $this->get404();
         }
-        $json = $entity->toJson();
-        $redis->hset($this->collection, $id, $json);
 
-        return $this->jsonResponse($entity->toJson());
-    }
+        $requestData = $request->all();
 
-    public function getAverage($id, Request $request)
-    {
-        if (!$this->customValidate($request, [
-            'fromDate' => 'int',
-            'toDate' => 'int',
-            'fromAge' => 'int',
-            'toAge' => 'int',
-            'gender' => 'in:m,f',
-        ])) {
+        $fromDate = $requestData['fromDate'] ?? null;
+        $toDate = $requestData['toDate'] ?? null;
+        $fromAge = $requestData['fromAge'] ?? null;
+        $toAge = $requestData['toAge'] ?? null;
+        $gender = $requestData['gender'] ?? null;
+
+        if (
+            ($fromDate && !ctype_digit($fromDate)) ||
+            ($toDate && !ctype_digit($toDate)) ||
+            ($fromAge && !ctype_digit($fromAge)) ||
+            ($toAge && !ctype_digit($toAge)) ||
+            ($gender && ($gender !== 'm' && $gender !== 'f'))
+        ) {
             return $this->get400();
         }
 
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
+        $sql = 'SELECT COALESCE(AVG(mark), 0) as res
+        FROM visit';
+        $where = ' WHERE location = ' . $id;
+
+        if ($fromDate !== null) {
+            $where .= ' AND visited_at > ' . $fromDate;
+        }
+        if ($toDate !== null) {
+            $where .= ' AND visited_at < ' . $toDate;
         }
 
-        $entity = Location::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        $query = Visit::select(DB::raw('COALESCE(AVG(mark), 0) as res'))
-            ->where('location', '=', $id);
-
-        if ($fromDate = request()->get('fromDate')) {
-            $query->where('visited_at', '>', $fromDate);
-        }
-        if ($toDate = request()->get('toDate')) {
-            $query->where('visited_at', '<', $toDate);
-        }
-
-        $fromAge = request()->get('fromAge');
-        $toAge = request()->get('toAge');
-        $gender = request()->get('gender');
-
-        if ($fromAge || $toAge || $gender) {
-            $query->join('profile', 'profile.id', '=', 'visit.user');
+        if ($fromAge || $toAge !== null || $gender !== null) {
+            $sql .= ' JOIN profile on profile.id = visit.user';
 
             if ($fromAge && $toAge) {
                 $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
                 $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
-                $query->whereRaw('profile.birth_date BETWEEN ' . $to . ' AND ' . $from);
+                $where .= ' AND profile.birth_date BETWEEN ' . $to . ' AND ' . $from;
             }
             elseif ($fromAge) {
                 $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
-                $query->whereRaw('profile.birth_date < ' . $from);
+                $where .= ' AND profile.birth_date < ' . $from;
             }
             elseif ($toAge) {
                 $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
-                $query->whereRaw('profile.birth_date > ' . $to);
+                $where .= ' AND profile.birth_date > ' . $to;
             }
 
             if ($gender) {
-                $query->where('profile.gender', '=', $gender);
+                $where .= " AND profile.gender = '" . $gender . "'";
             }
         }
 
-        $res = $query->first();
+        $pdo = DB::connection()->getPdo();
+        $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
 
-        return $this->jsonResponse('{"avg": ' . round($res->res, 5) . '}');
+        return $this->jsonResponse('{"avg": ' . round($data['res'], 5) . '}');
     }
 
     public function create(Request $request)
@@ -122,7 +105,7 @@ class LocationController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        if (!$this->isCorrectId($id)) {
+        if (!ctype_digit($id)) {
             return $this->get404();
         }
 

@@ -11,30 +11,6 @@ class VisitController extends ApiController
 {
     protected $collection = 'visit';
 
-    public function get($id)
-    {
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
-        }
-
-        $redis = App::make('Redis');
-        $user = $redis->hget($this->collection, $id);
-        if ($user) {
-            return $this->jsonResponse($user);
-        }
-
-        $entity = Visit::find($id);
-
-        if (!$entity) {
-            return $this->get404();
-        }
-
-        $json = $entity->toJson();
-        $redis->hset($this->collection, $id, $json);
-
-        return $this->jsonResponse($entity->toJson());
-    }
-
     public function create(Request $request)
     {
         $requestData = $request->json()->all();
@@ -55,7 +31,7 @@ class VisitController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        if (!$this->isCorrectId($id)) {
+        if (!ctype_digit($id)) {
             return $this->get404();
         }
 

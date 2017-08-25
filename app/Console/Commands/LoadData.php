@@ -49,6 +49,8 @@ class LoadData extends Command
 
     protected function loadUsers()
     {
+        $this->executeSql('TRUNCATE TABLE profile');
+
         $zip = zip_open($this->path);
 
         while ($zip_entry = zip_read($zip)) {
@@ -59,6 +61,7 @@ class LoadData extends Command
                 || (
                     explode('_', $filename)[0] !== 'users'
                     && explode('_', $filename)[0] !== 'data/data/users'
+                    && explode('_', $filename)[0] !== 'data/FULL/data/users'
                 )
             ) {
                 continue;
@@ -100,6 +103,8 @@ class LoadData extends Command
 
     protected function loadLocations()
     {
+        $this->executeSql('TRUNCATE TABLE location');
+
         $zip = zip_open($this->path);
 
         while ($zip_entry = zip_read($zip)) {
@@ -109,6 +114,7 @@ class LoadData extends Command
                 || (
                     explode('_', $filename)[0] !== 'locations'
                     && explode('_', $filename)[0] !== 'data/data/locations'
+                    && explode('_', $filename)[0] !== 'data/FULL/data/locations'
                 )
             ) {
                 continue;
@@ -149,6 +155,8 @@ class LoadData extends Command
 
     protected function loadVisits()
     {
+        $this->executeSql('TRUNCATE TABLE visit');
+
         $zip = zip_open($this->path);
 
         while ($zip_entry = zip_read($zip)) {
@@ -158,6 +166,7 @@ class LoadData extends Command
                 || (
                     explode('_', $filename)[0] !== 'visits'
                     && explode('_', $filename)[0] !== 'data/data/visits'
+                    && explode('_', $filename)[0] !== 'data/FULL/data/visits'
                 )
             ) {
                 continue;

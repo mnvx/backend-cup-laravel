@@ -5,18 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
-use Illuminate\Validation\ValidationException;
 
 class ApiController extends Controller
 {
-    public function __construct()
+    public function get($id)
     {
-        //response()->header('Content-Transfer-Encoding', 'binary');
-    }
+        if (!ctype_digit($id)) {
+            return $this->get404();
+        }
 
-    public function isCorrectId($id)
-    {
-        return (string)(int)$id === (string)$id;
+        if ($entity = App::make('Redis')->hget($this->collection, $id)) {
+            return $this->jsonResponse($entity);
+        }
+
+        return $this->get404();
     }
 
     public function get400()
@@ -31,17 +33,6 @@ class ApiController extends Controller
         $response = new Response();
         $response->setStatusCode(404);
         return $response;
-    }
-
-    public function customValidate($request, $rules)
-    {
-        try {
-            $this->validate($request, $rules);
-        }
-        catch (ValidationException $e) {
-            return false;
-        }
-        return true;
     }
 
     public function jsonResponse($json)

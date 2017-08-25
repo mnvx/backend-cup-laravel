@@ -3,78 +3,68 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\User;
-use App\Model\Entity\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
+use PDO;
 use Throwable;
 
 class UserController extends ApiController
 {
     protected $collection = 'user';
 
-    public function get($id)
+    public function getVisits($id, Request $request)
     {
-        if (!$this->isCorrectId($id)) {
+        $requestData = $request->all();
+
+        $fromDate = $requestData['fromDate'] ?? null;
+        $toDate = $requestData['toDate'] ?? null;
+        $distance = $requestData['toDistance'] ?? null;
+        $country = $requestData['country'] ?? null;
+
+        if (
+            ($fromDate && !ctype_digit($fromDate)) ||
+            ($toDate && !ctype_digit($toDate)) ||
+            ($distance && !ctype_digit($distance))
+        ) {
+            return $this->get400();
+        }
+
+        if (!ctype_digit($id)) {
             return $this->get404();
         }
 
         $redis = App::make('Redis');
-        $user = $redis->hget($this->collection, $id);
-        if ($user) {
-            return $this->jsonResponse($user);
-        }
-
-        $entity = User::find($id);
-
+        $entity = $redis->hget($this->collection, $id);
         if (!$entity) {
             return $this->get404();
         }
 
-        $json = $entity->toJson();
-        $redis->hset($this->collection, $id, $json);
+        /** @var PDO $pdo */
+        $pdo = DB::connection()->getPdo();
 
-        return $this->jsonResponse($json);
-    }
+        $sql = 'SELECT mark, visited_at, place
+        FROM visit
+        JOIN location ON location.id = visit.location
+        WHERE "user" = ' . $id;
 
-    public function getVisits($id, Request $request)
-    {
-        if (!$this->customValidate($request, [
-            'fromDate' => 'int',
-            'toDate' => 'int',
-            'toDistance' => 'int',
-        ])) {
-            return $this->get400();
+        if ($fromDate) {
+            $sql .= ' AND visited_at > ' . $fromDate;
         }
-
-        if (!$this->isCorrectId($id)) {
-            return $this->get404();
+        if ($toDate) {
+            $sql .= ' AND visited_at < ' . $toDate;
         }
-
-        $entity = User::find($id);
-
-        if (!$entity) {
-            return $this->get404();
+        if ($country) {
+            $sql .= ' AND country = ' . $pdo->quote($country);
         }
+        if ($distance) {
+            $sql .= ' AND distance < ' . $distance;
+        }
+        $sql .= ' ORDER BY visited_at';
 
-        $query = Visit::select('mark', 'visited_at', 'place')
-            ->where('user', '=', $id)
-            ->join('location', 'location.id', '=', 'visit.location');
+        $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($fromDate = request()->get('fromDate')) {
-            $query->where('visited_at', '>', $fromDate);
-        }
-        if ($toDate = request()->get('toDate')) {
-            $query->where('visited_at', '<', $toDate);
-        }
-        if ($country = request()->get('country')) {
-            $query->where('country', '=', $country);
-        }
-        if ($distance = request()->get('toDistance')) {
-            $query->where('distance', '<', $distance);
-        }
-        $query->orderBy('visited_at');
-
-        return $this->jsonResponse('{"visits": ' . $query->get()->toJson() . '}');
+        return $this->jsonResponse('{"visits": ' . json_encode($data) . '}');
     }
 
     public function create(Request $request)
@@ -98,7 +88,7 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        if (!$this->isCorrectId($id)) {
+        if (!ctype_digit($id)) {
             return $this->get404();
         }
 
