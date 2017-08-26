@@ -42,11 +42,14 @@ class VisitController extends ApiController
         $user = $requestData['user'] ?? null;
         $visitedAt = $requestData['visited_at'] ?? null;
         $mark = $requestData['mark'] ?? null;
+        if ($location === null && $user === null && $visitedAt === null && $mark === null) {
+            return $this->get400();
+        }
         if (
             (array_key_exists('location', $requestData) && !is_int($location)) ||
             (array_key_exists('user', $requestData) && !is_int($user)) ||
-            (array_key_exists('visited_at', $requestData) && ($visitedAt < 946674000 || $visitedAt >= 1420146000 || $visitedAt === null)) ||
-            (array_key_exists('mark', $requestData) && ($mark < 0 || $mark > 5))
+            (array_key_exists('visited_at', $requestData) && ($visitedAt < 946674000 || $visitedAt >= 1420146000 || !is_int($visitedAt))) ||
+            (array_key_exists('mark', $requestData) && ($mark < 0 || $mark > 5 || !is_int($mark)))
         ) {
             return $this->get400();
         }

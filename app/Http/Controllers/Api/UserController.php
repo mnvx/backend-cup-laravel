@@ -101,12 +101,15 @@ class UserController extends ApiController
         $lastName = $requestData['last_name'] ?? null;
         $gender = $requestData['gender'] ?? null;
         $birthDate = $requestData['birth_date'] ?? null;
+        if ($email === null && $firstName === null && $lastName === null && $gender === null && $birthDate === null) {
+            return $this->get400();
+        }
         if (
             (array_key_exists('email', $requestData) && (mb_strlen($email) > 100 || $email === null)) ||
             (array_key_exists('first_name', $requestData) && (mb_strlen($firstName) > 50 || $firstName === null)) ||
             (array_key_exists('last_name', $requestData) && (mb_strlen($lastName) > 50 || $lastName === null)) ||
             (array_key_exists('gender', $requestData) && (($gender !== 'm' && $gender !== 'f') || $gender === null)) ||
-            (array_key_exists('birth_date', $requestData) && ($birthDate < -1262311200 || $birthDate >= 915224400 || $birthDate === null))
+            (array_key_exists('birth_date', $requestData) && ($birthDate < -1262311200 || $birthDate >= 915224400 || !is_int($birthDate)))
         ) {
             return $this->get400();
         }

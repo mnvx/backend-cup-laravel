@@ -114,6 +114,9 @@ class LocationController extends ApiController
         $country = $requestData['country'] ?? null;
         $city = $requestData['city'] ?? null;
         $distance = $requestData['distance'] ?? null;
+        if ($place === null && $country === null && $city === null && $distance === null) {
+            return $this->get400();
+        }
         if (
             (array_key_exists('place', $requestData) && ($place === null)) ||
             (array_key_exists('country', $requestData) && (mb_strlen($country) > 50 || $country === null)) ||

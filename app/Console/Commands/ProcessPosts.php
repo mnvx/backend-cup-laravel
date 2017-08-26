@@ -49,36 +49,46 @@ class ProcessPosts extends Command
         $count = 0;
 
         while (true) {
+            $hasNews = false;
+
             $sqlUpdates = $this->getUserUpdates();
             $sqlInserts = $this->getUserInserts();
             if ($sqlInserts) {
+                $hasNews = true;
                 $this->pdo->exec($sqlInserts);
             }
             if ($sqlUpdates) {
+                $hasNews = true;
                 $this->pdo->exec($sqlUpdates);
             }
 
             $sqlUpdates = $this->getLocationUpdates();
             $sqlInserts = $this->getLocationInserts();
             if ($sqlInserts) {
+                $hasNews = true;
                 $this->pdo->exec($sqlInserts);
             }
             if ($sqlUpdates) {
+                $hasNews = true;
                 $this->pdo->exec($sqlUpdates);
             }
 
             $sqlUpdates = $this->getVisitUpdates();
             $sqlInserts = $this->getVisitInserts();
             if ($sqlInserts) {
+                $hasNews = true;
                 $this->pdo->exec($sqlInserts);
             }
             if ($sqlUpdates) {
+                $hasNews = true;
                 $this->pdo->exec($sqlUpdates);
             }
 
             echo 'Process posts step ' . ++$count . PHP_EOL;
 
-            sleep(1);
+            if (!$hasNews) {
+                sleep(1);
+            }
         }
     }
 
