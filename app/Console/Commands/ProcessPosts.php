@@ -2,9 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Model\Entity\Location;
-use App\Model\Entity\User;
-use App\Model\Entity\Visit;
 use App\Model\Keys;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
@@ -55,33 +52,63 @@ class ProcessPosts extends Command
             $sqlInserts = $this->getUserInserts();
             if ($sqlInserts) {
                 $hasNews = true;
-                $this->pdo->exec($sqlInserts);
+                try {
+                    $this->pdo->exec($sqlInserts);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
-                $this->pdo->exec($sqlUpdates);
+                try {
+                    $this->pdo->exec($sqlUpdates);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
 
             $sqlUpdates = $this->getLocationUpdates();
             $sqlInserts = $this->getLocationInserts();
             if ($sqlInserts) {
                 $hasNews = true;
-                $this->pdo->exec($sqlInserts);
+                try {
+                    $this->pdo->exec($sqlInserts);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
-                $this->pdo->exec($sqlUpdates);
+                try {
+                    $this->pdo->exec($sqlUpdates);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
 
             $sqlUpdates = $this->getVisitUpdates();
             $sqlInserts = $this->getVisitInserts();
             if ($sqlInserts) {
                 $hasNews = true;
-                $this->pdo->exec($sqlInserts);
+                try {
+                    $this->pdo->exec($sqlInserts);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
-                $this->pdo->exec($sqlUpdates);
+                try {
+                    $this->pdo->exec($sqlUpdates);
+                }
+                catch (\PDOException $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                }
             }
 
             echo 'Process posts step ' . ++$count . PHP_EOL;
@@ -253,7 +280,7 @@ class ProcessPosts extends Command
                 $set[] = 'location = '  . $data['location'];
             }
             if (isset($data['user'])) {
-                $set[] = 'user = '  . $data['user'];
+                $set[] = '"user" = '  . $data['user'];
             }
             if (isset($data['visited_at'])) {
                 $set[] = 'visited_at = '  . $data['visited_at'];
@@ -278,17 +305,17 @@ class ProcessPosts extends Command
 
     protected function getVisitInserts()
     {
-        $sql = 'INSERT INTO visit (id, place, country, city, distance) VALUES ';
+        $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
         $values = [];
         while ($json = $this->redis->rpop(Keys::VISIT_INSERT_KEY)) {
             $data = json_decode($json, true);
 
             $values[] = '('
                 . $data['id'] . ','
-                . $this->pdo->quote($data['place']) . ','
-                . $this->pdo->quote($data['country']) . ','
-                . $this->pdo->quote($data['city']) . ','
-                . $data['distance']
+                . $data['location'] . ','
+                . $data['user'] . ','
+                . $data['visited_at'] . ','
+                . $data['mark']
                 . ')';
 
             $this->redis->hset(Keys::VISIT_COLLECTION, $data['id'], json_encode($data));
