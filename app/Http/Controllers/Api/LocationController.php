@@ -85,11 +85,12 @@ class LocationController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $id = $requestData['id'] ?? null;
         $place = $requestData['place'] ?? null;
         $country = $requestData['country'] ?? null;
         $city = $requestData['city'] ?? null;
         $distance = $requestData['distance'] ?? null;
-        if ($place === null || $country === null || $city === null || $distance === null) {
+        if ($place === null || $country === null || $city === null || $distance === null || $id === null) {
             return $this->get400();
         }
         if (

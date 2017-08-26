@@ -68,12 +68,13 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $id = $requestData['id'] ?? null;
         $email = $requestData['email'] ?? null;
         $firstName = $requestData['first_name'] ?? null;
         $lastName = $requestData['last_name'] ?? null;
         $gender = $requestData['gender'] ?? null;
         $birthDate = $requestData['birth_date'] ?? null;
-        if ($email === null || $firstName === null || $lastName === null || $gender === null || $birthDate === null) {
+        if ($email === null || $firstName === null || $lastName === null || $gender === null || $birthDate === null || $id === null) {
             return $this->get400();
         }
         if (

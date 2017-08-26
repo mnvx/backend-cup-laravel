@@ -14,11 +14,12 @@ class VisitController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $id = $requestData['id'] ?? null;
         $location = $requestData['location'] ?? null;
         $user = $requestData['user'] ?? null;
         $visited_at = $requestData['visited_at'] ?? null;
         $mark = $requestData['mark'] ?? null;
-        if ($location === null || $user === null || $visited_at === null || $mark === null) {
+        if ($location === null || $user === null || $visited_at === null || $mark === null || $id === null) {
             return $this->get400();
         }
         if (
