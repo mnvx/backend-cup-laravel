@@ -1,0 +1,1 @@
+php /var/www/cup-backend/artisan cup:process-posts &

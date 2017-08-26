@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\User;
 use App\Model\Keys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use PDO;
-use Throwable;
 
 class UserController extends ApiController
 {
@@ -35,8 +32,7 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        $redis = App::make('Redis');
-        $entity = $redis->hget($this->collection, $id);
+        $entity = $this->redis->hget($this->collection, $id);
         if (!$entity) {
             return $this->get404();
         }
@@ -90,8 +86,7 @@ class UserController extends ApiController
             return $this->get400();
         }
 
-        $redis = App::make('Redis');
-        $redis->lpush(Keys::USER_INSERT_KEY, json_encode($requestData));
+        $this->redis->lpush(Keys::USER_INSERT_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }
@@ -100,17 +95,14 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        $email = $requestData['email'] ?? null;
-        $firstName = $requestData['first_name'] ?? null;
-        $lastName = $requestData['last_name'] ?? null;
         $gender = $requestData['gender'] ?? null;
         $birthDate = $requestData['birth_date'] ?? null;
         if (
-            ($email && mb_strlen($email) > 100) ||
-            ($firstName && mb_strlen($firstName) > 50) ||
-            ($lastName && mb_strlen($lastName) > 50) ||
-            ($gender && $gender !== 'm' && $gender !== 'f') ||
-            ($birthDate && ($birthDate < -1262311200 || $birthDate >= 915224400))
+            (isset($requestData['email']) && mb_strlen($requestData['email']) > 100) ||
+            (isset($requestData['first_name']) && mb_strlen($requestData['first_name']) > 50) ||
+            (isset($requestData['last_name']) && mb_strlen($requestData['last_name']) > 50) ||
+            (isset($requestData['gender']) && $gender !== 'm' && $gender !== 'f') ||
+            (array_key_exists('birth_date', $requestData) && ($birthDate < -1262311200 || $birthDate >= 915224400 || $birthDate === null))
         ) {
             return $this->get400();
         }
@@ -119,9 +111,7 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        $redis = App::make('Redis');
-
-        if (!$entity = $redis->hget($this->collection, $id)) {
+        if (!$entity = $this->redis->hget($this->collection, $id)) {
             return $this->get404();
         }
 
@@ -129,8 +119,8 @@ class UserController extends ApiController
             return $this->get400();
         }
 
-        $requestData['id'] = $id;
-        $redis->lpush(Keys::USER_UPDATE_KEY, json_encode($requestData));
+        $requestData['id'] = (int)$id;
+        $this->redis->lpush(Keys::USER_UPDATE_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }

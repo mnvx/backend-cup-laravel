@@ -8,38 +8,45 @@ use Illuminate\Support\Facades\App;
 
 class ApiController extends Controller
 {
+    protected $redis;
+
+    public function __construct()
+    {
+        $this->redis = App::make('Redis');
+    }
+
     public function get($id)
     {
         if (!ctype_digit($id)) {
-            return $this->get404();
+            return new Response(null, 404);
         }
 
-        if ($entity = App::make('Redis')->hget($this->collection, $id)) {
-            return $this->jsonResponse($entity);
+        if ($entity = $this->redis->hget($this->collection, $id)) {
+            return (new Response($entity, 200, [
+                'Content-Type' => 'application/json',
+                'Content-Length' => strlen($entity),
+            ]));
         }
 
-        return $this->get404();
+        return new Response(null, 404);
     }
 
     public function get400()
     {
-        $response = new Response();
-        $response->setStatusCode(400);
-        return $response;
+        return new Response(null, 400);
     }
 
     public function get404()
     {
-        $response = new Response();
-        $response->setStatusCode(404);
-        return $response;
+        return new Response(null, 404);
     }
 
     public function jsonResponse($json)
     {
-        return response($json)
-            ->header('Content-Type', 'application/json')
-            ->header('Content-Length', strlen($json))
-        ;
+        return (new Response($json, 200, [
+            'Content-Type' => 'application/json',
+            'Content-Length' => strlen($json),
+            //'Connection' => 'Keep-alive',
+        ]));
     }
 }
