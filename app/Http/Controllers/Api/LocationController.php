@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\Location;
+use App\Model\Keys;
 use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use PDO;
-use Throwable;
 
 class LocationController extends ApiController
 {
@@ -21,8 +19,7 @@ class LocationController extends ApiController
             return $this->get404();
         }
 
-        $redis = App::make('Redis');
-        $entity = $redis->hget($this->collection, $id);
+        $entity = $this->redis->hget($this->collection, $id);
         if (!$entity) {
             return $this->get404();
         }
@@ -88,15 +85,22 @@ class LocationController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        try {
-            Location::insert($requestData);
+        $place = $requestData['place'] ?? null;
+        $country = $requestData['country'] ?? null;
+        $city = $requestData['city'] ?? null;
+        $distance = $requestData['distance'] ?? null;
+        if ($place === null || $country === null || $city === null || $distance === null) {
+            return $this->get400();
         }
-        catch (Throwable $e) {
+        if (
+            (mb_strlen($country) > 50) ||
+            (mb_strlen($city) > 50) ||
+            (!is_int($distance))
+        ) {
             return $this->get400();
         }
 
-        $redis = App::make('Redis');
-        $redis->hset($this->collection, $requestData['id'], $request->getContent());
+        $this->redis->lpush(Keys::LOCATION_INSERT_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }
@@ -105,13 +109,24 @@ class LocationController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $place = $requestData['place'] ?? null;
+        $country = $requestData['country'] ?? null;
+        $city = $requestData['city'] ?? null;
+        $distance = $requestData['distance'] ?? null;
+        if (
+            (array_key_exists('place', $requestData) && ($place === null)) ||
+            (array_key_exists('country', $requestData) && (mb_strlen($country) > 50 || $country === null)) ||
+            (array_key_exists('city', $requestData) && (mb_strlen($city) > 50 || $city === null)) ||
+            (array_key_exists('distance', $requestData) && (!is_int($distance) || $distance === null))
+        ) {
+            return $this->get400();
+        }
+
         if (!ctype_digit($id)) {
             return $this->get404();
         }
 
-        $entity = Location::find($id);
-
-        if (!$entity) {
+        if (!$entity = $this->redis->hget($this->collection, $id)) {
             return $this->get404();
         }
 
@@ -119,16 +134,8 @@ class LocationController extends ApiController
             return $this->get400();
         }
 
-        try {
-            Location::where('id', '=', $id)
-                ->update($requestData);
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        $redis = App::make('Redis');
-        $redis->hset($this->collection, $id, json_encode($requestData + $entity->toArray()));
+        $requestData['id'] = (int)$id;
+        $this->redis->lpush(Keys::LOCATION_UPDATE_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }

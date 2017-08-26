@@ -57,24 +57,24 @@ class ProcessPosts extends Command
             if ($sqlUpdates) {
                 $this->pdo->exec($sqlUpdates);
             }
-//
-//            $sqlUpdates = $this->getLocationUpdates();
-//            $sqlInserts = $this->getLocationInserts();
-//            if ($sqlInserts) {
-//                $this->pdo->exec($sqlInserts);
-//            }
-//            if ($sqlUpdates) {
-//                $this->pdo->exec($sqlUpdates);
-//            }
-//
-//            $sqlUpdates = $this->getVisitUpdates();
-//            $sqlInserts = $this->getVisitInserts();
-//            if ($sqlInserts) {
-//                $this->pdo->exec($sqlInserts);
-//            }
-//            if ($sqlUpdates) {
-//                $this->pdo->exec($sqlUpdates);
-//            }
+
+            $sqlUpdates = $this->getLocationUpdates();
+            $sqlInserts = $this->getLocationInserts();
+            if ($sqlInserts) {
+                $this->pdo->exec($sqlInserts);
+            }
+            if ($sqlUpdates) {
+                $this->pdo->exec($sqlUpdates);
+            }
+
+            $sqlUpdates = $this->getVisitUpdates();
+            $sqlInserts = $this->getVisitInserts();
+            if ($sqlInserts) {
+                $this->pdo->exec($sqlInserts);
+            }
+            if ($sqlUpdates) {
+                $this->pdo->exec($sqlUpdates);
+            }
 
             echo 'Process posts step ' . ++$count . PHP_EOL;
 
@@ -154,4 +154,139 @@ class ProcessPosts extends Command
         return $sql . implode(', ', $values) . ';';
     }
 
+    protected function getLocationUpdates()
+    {
+        $collection = Keys::LOCATION_COLLECTION;
+        $sql = null;
+        $updates = [];
+        while ($json = $this->redis->rpop(Keys::LOCATION_UPDATE_KEY)) {
+            $data = json_decode($json, true);
+            if (!isset($updates[$data['id']])) {
+                $updates[$data['id']] = $data;
+            }
+            else {
+                $updates[$data['id']] = $data + $updates[$data['id']];
+            }
+        }
+
+        foreach ($updates as $id => $data) {
+            $set = [];
+            if (isset($data['place'])) {
+                $set[] = 'place = '  . $this->pdo->quote($data['place']);
+            }
+            if (isset($data['country'])) {
+                $set[] = 'country = '  . $this->pdo->quote($data['country']);
+            }
+            if (isset($data['city'])) {
+                $set[] = 'city = '  . $this->pdo->quote($data['city']);
+            }
+            if (isset($data['distance'])) {
+                $set[] = 'distance = '  . $data['distance'];
+            }
+
+            if (empty($set)) {
+                continue;
+            }
+            $sql .= 'UPDATE location SET ' .
+                implode(', ', $set) .
+                ' WHERE id = ' . $data['id'] . ';';
+
+            $entity = json_decode($this->redis->hget($collection, $id), true);
+
+            $this->redis->hset($collection, $data['id'], json_encode($data + $entity));
+        }
+        return $sql;
+    }
+
+    protected function getLocationInserts()
+    {
+        $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
+        $values = [];
+        while ($json = $this->redis->rpop(Keys::LOCATION_INSERT_KEY)) {
+            $data = json_decode($json, true);
+
+            $values[] = '('
+                . $data['id'] . ','
+                . $this->pdo->quote($data['place']) . ','
+                . $this->pdo->quote($data['country']) . ','
+                . $this->pdo->quote($data['city']) . ','
+                . $data['distance']
+                . ')';
+
+            $this->redis->hset(Keys::LOCATION_COLLECTION, $data['id'], json_encode($data));
+        }
+        if (empty($values)) {
+            return null;
+        }
+
+        return $sql . implode(', ', $values) . ';';
+    }
+
+    protected function getVisitUpdates()
+    {
+        $collection = Keys::VISIT_COLLECTION;
+        $sql = null;
+        $updates = [];
+        while ($json = $this->redis->rpop(Keys::VISIT_UPDATE_KEY)) {
+            $data = json_decode($json, true);
+            if (!isset($updates[$data['id']])) {
+                $updates[$data['id']] = $data;
+            }
+            else {
+                $updates[$data['id']] = $data + $updates[$data['id']];
+            }
+        }
+
+        foreach ($updates as $id => $data) {
+            $set = [];
+            if (isset($data['location'])) {
+                $set[] = 'location = '  . $data['location'];
+            }
+            if (isset($data['user'])) {
+                $set[] = 'user = '  . $data['user'];
+            }
+            if (isset($data['visited_at'])) {
+                $set[] = 'visited_at = '  . $data['visited_at'];
+            }
+            if (isset($data['mark'])) {
+                $set[] = 'mark = '  . $data['mark'];
+            }
+
+            if (empty($set)) {
+                continue;
+            }
+            $sql .= 'UPDATE visit SET ' .
+                implode(', ', $set) .
+                ' WHERE id = ' . $data['id'] . ';';
+
+            $entity = json_decode($this->redis->hget($collection, $id), true);
+
+            $this->redis->hset($collection, $data['id'], json_encode($data + $entity));
+        }
+        return $sql;
+    }
+
+    protected function getVisitInserts()
+    {
+        $sql = 'INSERT INTO visit (id, place, country, city, distance) VALUES ';
+        $values = [];
+        while ($json = $this->redis->rpop(Keys::VISIT_INSERT_KEY)) {
+            $data = json_decode($json, true);
+
+            $values[] = '('
+                . $data['id'] . ','
+                . $this->pdo->quote($data['place']) . ','
+                . $this->pdo->quote($data['country']) . ','
+                . $this->pdo->quote($data['city']) . ','
+                . $data['distance']
+                . ')';
+
+            $this->redis->hset(Keys::VISIT_COLLECTION, $data['id'], json_encode($data));
+        }
+        if (empty($values)) {
+            return null;
+        }
+
+        return $sql . implode(', ', $values) . ';';
+    }
 }

@@ -95,13 +95,16 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $email = $requestData['email'] ?? null;
+        $firstName = $requestData['first_name'] ?? null;
+        $lastName = $requestData['last_name'] ?? null;
         $gender = $requestData['gender'] ?? null;
         $birthDate = $requestData['birth_date'] ?? null;
         if (
-            (isset($requestData['email']) && mb_strlen($requestData['email']) > 100) ||
-            (isset($requestData['first_name']) && mb_strlen($requestData['first_name']) > 50) ||
-            (isset($requestData['last_name']) && mb_strlen($requestData['last_name']) > 50) ||
-            (isset($requestData['gender']) && $gender !== 'm' && $gender !== 'f') ||
+            (array_key_exists('email', $requestData) && (mb_strlen($email) > 100 || $email === null)) ||
+            (array_key_exists('first_name', $requestData) && (mb_strlen($firstName) > 50 || $firstName === null)) ||
+            (array_key_exists('last_name', $requestData) && (mb_strlen($lastName) > 50 || $lastName === null)) ||
+            (array_key_exists('gender', $requestData) && (($gender !== 'm' && $gender !== 'f') || $gender === null)) ||
             (array_key_exists('birth_date', $requestData) && ($birthDate < -1262311200 || $birthDate >= 915224400 || $birthDate === null))
         ) {
             return $this->get400();

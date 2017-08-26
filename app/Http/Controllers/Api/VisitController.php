@@ -2,27 +2,33 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Model\Entity\Visit;
+use App\Model\Keys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use Throwable;
 
 class VisitController extends ApiController
 {
     protected $collection = 'visit';
 
+
     public function create(Request $request)
     {
         $requestData = $request->json()->all();
-        try {
-            Visit::insert($requestData);
+
+        $location = $requestData['location'] ?? null;
+        $user = $requestData['user'] ?? null;
+        $visited_at = $requestData['visited_at'] ?? null;
+        $mark = $requestData['mark'] ?? null;
+        if ($location === null || $user === null || $visited_at === null || $mark === null) {
+            return $this->get400();
         }
-        catch (Throwable $e) {
+        if (
+            ($visited_at < 946674000 || $visited_at >= 1420146000) ||
+            ($mark < 0 || $mark > 5)
+        ) {
             return $this->get400();
         }
 
-        $redis = App::make('Redis');
-        $redis->hset($this->collection, $requestData['id'], $request->getContent());
+        $this->redis->lpush(Keys::VISIT_INSERT_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }
@@ -31,13 +37,24 @@ class VisitController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $location = $requestData['location'] ?? null;
+        $user = $requestData['user'] ?? null;
+        $visitedAt = $requestData['visited_at'] ?? null;
+        $mark = $requestData['mark'] ?? null;
+        if (
+            (array_key_exists('location', $requestData) && !is_int($location)) ||
+            (array_key_exists('user', $requestData) && !is_int($user)) ||
+            (array_key_exists('visited_at', $requestData) && ($visitedAt < 946674000 || $visitedAt >= 1420146000 || $visitedAt === null)) ||
+            (array_key_exists('mark', $requestData) && ($mark < 0 || $mark > 5))
+        ) {
+            return $this->get400();
+        }
+
         if (!ctype_digit($id)) {
             return $this->get404();
         }
 
-        $entity = Visit::find($id);
-
-        if (!$entity) {
+        if (!$entity = $this->redis->hget($this->collection, $id)) {
             return $this->get404();
         }
 
@@ -45,16 +62,8 @@ class VisitController extends ApiController
             return $this->get400();
         }
 
-        try {
-            Visit::where('id', '=', $id)
-                ->update($requestData);
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        $redis = App::make('Redis');
-        $redis->hset($this->collection, $id, json_encode($requestData + $entity->toArray()));
+        $requestData['id'] = (int)$id;
+        $this->redis->lpush(Keys::VISIT_UPDATE_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }
