@@ -103,4 +103,4 @@ CMD service redis-server start ; \
     php /var/www/cup-backend/artisan cup:load-data ; \
     sh /var/www/cup-backend/background.sh ; \
     cd /var/www/cup-backend ; \
-    php ./vendor/bin/ppm start --bootstrap=laravel --port=80 --workers=4 --host=[::]
+    php ./vendor/bin/ppm start --bootstrap=laravel --port=80 --workers=4 --host=[::] --logging=0 --debug=0
