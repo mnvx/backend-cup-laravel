@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Model\Entity\User;
+use App\Model\Keys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use Throwable;
 
 class UserController extends ApiController
 {
-    protected $collection = 'user';
+    protected $collection = Keys::USER_COLLECTION;
 
     public function getVisits($id, Request $request)
     {
@@ -71,15 +72,26 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
-        try {
-            User::insert($requestData);
+        $email = $requestData['email'] ?? null;
+        $firstName = $requestData['first_name'] ?? null;
+        $lastName = $requestData['last_name'] ?? null;
+        $gender = $requestData['gender'] ?? null;
+        $birthDate = $requestData['birth_date'] ?? null;
+        if ($email === null || $firstName === null || $lastName === null || $gender === null || $birthDate === null) {
+            return $this->get400();
         }
-        catch (Throwable $e) {
+        if (
+            (mb_strlen($email) > 100) ||
+            (mb_strlen($firstName) > 50) ||
+            (mb_strlen($lastName) > 50) ||
+            ($gender !== 'm' && $gender !== 'f') ||
+            ($birthDate < -1262311200 || $birthDate >= 915224400)
+        ) {
             return $this->get400();
         }
 
         $redis = App::make('Redis');
-        $redis->hset($this->collection, $requestData['id'], $request->getContent());
+        $redis->lpush(Keys::USER_INSERT_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }
@@ -88,13 +100,28 @@ class UserController extends ApiController
     {
         $requestData = $request->json()->all();
 
+        $email = $requestData['email'] ?? null;
+        $firstName = $requestData['first_name'] ?? null;
+        $lastName = $requestData['last_name'] ?? null;
+        $gender = $requestData['gender'] ?? null;
+        $birthDate = $requestData['birth_date'] ?? null;
+        if (
+            ($email && mb_strlen($email) > 100) ||
+            ($firstName && mb_strlen($firstName) > 50) ||
+            ($lastName && mb_strlen($lastName) > 50) ||
+            ($gender && $gender !== 'm' && $gender !== 'f') ||
+            ($birthDate && ($birthDate < -1262311200 || $birthDate >= 915224400))
+        ) {
+            return $this->get400();
+        }
+
         if (!ctype_digit($id)) {
             return $this->get404();
         }
 
-        $entity = User::find($id);
+        $redis = App::make('Redis');
 
-        if (!$entity) {
+        if (!$entity = $redis->hget($this->collection, $id)) {
             return $this->get404();
         }
 
@@ -102,16 +129,8 @@ class UserController extends ApiController
             return $this->get400();
         }
 
-        try {
-            User::where('id', '=', $id)
-                ->update($requestData);
-        }
-        catch (Throwable $e) {
-            return $this->get400();
-        }
-
-        $redis = App::make('Redis');
-        $redis->hset($this->collection, $id, json_encode($requestData + $entity->toArray()));
+        $requestData['id'] = $id;
+        $redis->lpush(Keys::USER_UPDATE_KEY, json_encode($requestData));
 
         return $this->jsonResponse('{}');
     }

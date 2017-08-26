@@ -101,5 +101,6 @@ CMD service redis-server start ; \
 #    service mysql start ; \
 #    service postgresql start ; \
     php /var/www/cup-backend/artisan cup:load-data ; \
+    php /var/www/cup-backend/artisan cup:process-posts & ; \
     cd /var/www/cup-backend ; \
     php ./vendor/bin/ppm start --bootstrap=laravel --port=80 --workers=4 --host=[::]
