@@ -55,7 +55,6 @@ class LoadData extends Command
 
         while ($zip_entry = zip_read($zip)) {
             $filename = zip_entry_name($zip_entry);
-            echo $filename . "\n";
             if (
                 substr($filename, -5) !== '.json'
                 || (
@@ -66,7 +65,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "users..." . PHP_EOL;
+            echo "users... from $filename" . PHP_EOL;
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -119,7 +118,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "locations...\n";
+            echo "locations from $filename...\n";
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -171,7 +170,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "visits...\n";
+            echo "visits from $filename...\n";
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
