@@ -76,7 +76,13 @@ class LocationController extends ApiController
         }
 
         $pdo = App::make('PDO');
-        $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
+        try {
+            $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
+        }
+        catch (\Throwable $e) {
+            $pdo = DB::connection()->getPdo();
+            $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
+        }
 
         return $this->jsonResponse('{"avg": ' . round($data['res'], 5) . '}');
     }

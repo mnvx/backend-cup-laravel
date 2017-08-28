@@ -228,12 +228,13 @@ class LoadData extends Command
         $completed = false;
         while (!$completed) {
             try {
-                DB::statement($sql);
+                $this->pdo->exec($sql);
                 $completed = true;
             }
             catch (\Throwable $e) {
                 echo 'Error: ' . $e->getMessage() . PHP_EOL;
-                sleep(5);
+                $this->pdo = DB::connection()->getPdo();
+                sleep(1);
             }
         }
     }

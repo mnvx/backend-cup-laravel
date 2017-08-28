@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Model\Keys;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 use PDO;
 
 class UserController extends ApiController
@@ -59,7 +60,13 @@ class UserController extends ApiController
         }
         $sql .= ' ORDER BY visited_at';
 
-        $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (\Throwable $e) {
+            $pdo = DB::connection()->getPdo();
+            $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         return $this->jsonResponse('{"visits": ' . json_encode($data) . '}');
     }
