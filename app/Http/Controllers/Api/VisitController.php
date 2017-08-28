@@ -9,6 +9,7 @@ class VisitController extends ApiController
 {
     protected $collection = 'visit';
 
+    protected $table = 'visit';
 
     public function create(Request $request)
     {
@@ -58,7 +59,8 @@ class VisitController extends ApiController
             return $this->get404();
         }
 
-        if (!$entity = $this->redis->hget($this->collection, $id)) {
+        $entity = $this->getRecord($id);
+        if (!$entity) {
             return $this->get404();
         }
 

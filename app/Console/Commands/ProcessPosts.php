@@ -43,12 +43,10 @@ class ProcessPosts extends Command
         /** @var PDO $pdo */
         $this->pdo = DB::connection()->getPdo();
 
-        $count = 0;
-
         while (true) {
             $hasNews = false;
 
-            $sqlUpdates = $this->getUserUpdates($updateEntities);
+            $sqlUpdates = $this->getUserUpdates();
             $sqlInserts = $this->getUserInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -63,16 +61,13 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
-                    if (!empty($updateEntities)) {
-                        $this->redis->hmset(Keys::USER_COLLECTION, $updateEntities);
-                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getLocationUpdates($updateEntities);
+            $sqlUpdates = $this->getLocationUpdates();
             $sqlInserts = $this->getLocationInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -87,16 +82,13 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
-                    if (!empty($updateEntities)) {
-                        $this->redis->hmset(Keys::LOCATION_COLLECTION, $updateEntities);
-                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getVisitUpdates($updateEntities);
+            $sqlUpdates = $this->getVisitUpdates();
             $sqlInserts = $this->getVisitInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -111,9 +103,6 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
-                    if (!empty($updateEntities)) {
-                        $this->redis->hmset(Keys::VISIT_COLLECTION, $updateEntities);
-                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
@@ -128,9 +117,8 @@ class ProcessPosts extends Command
         }
     }
 
-    protected function getUserUpdates(&$entities)
+    protected function getUserUpdates()
     {
-        $collection = Keys::USER_COLLECTION;
         $sql = null;
         $updates = [];
         while ($json = $this->redis->rpop(Keys::USER_UPDATE_KEY)) {
@@ -143,7 +131,6 @@ class ProcessPosts extends Command
             }
         }
 
-        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['email'])) {
@@ -168,11 +155,6 @@ class ProcessPosts extends Command
             $sql .= 'UPDATE profile SET ' .
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
-
-            if (!isset($entities[$id])) {
-                $entities[$id] = $this->redis->hget($collection, $id);
-            }
-            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }
@@ -192,8 +174,6 @@ class ProcessPosts extends Command
                 . $this->pdo->quote($data['gender']) . ','
                 . $data['birth_date']
                 . ')';
-
-            $this->redis->hset(Keys::USER_COLLECTION, $data['id'], json_encode($data));
         }
         if (empty($values)) {
             return null;
@@ -202,9 +182,8 @@ class ProcessPosts extends Command
         return $sql . implode(', ', $values) . ';';
     }
 
-    protected function getLocationUpdates(&$entities)
+    protected function getLocationUpdates()
     {
-        $collection = Keys::LOCATION_COLLECTION;
         $sql = null;
         $updates = [];
         while ($json = $this->redis->rpop(Keys::LOCATION_UPDATE_KEY)) {
@@ -217,7 +196,6 @@ class ProcessPosts extends Command
             }
         }
 
-        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['place'])) {
@@ -239,11 +217,6 @@ class ProcessPosts extends Command
             $sql .= 'UPDATE location SET ' .
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
-
-            if (!isset($entities[$id])) {
-                $entities[$id] = $this->redis->hget($collection, $id);
-            }
-            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }
@@ -262,8 +235,6 @@ class ProcessPosts extends Command
                 . $this->pdo->quote($data['city']) . ','
                 . $data['distance']
                 . ')';
-
-            $this->redis->hset(Keys::LOCATION_COLLECTION, $data['id'], json_encode($data));
         }
         if (empty($values)) {
             return null;
@@ -272,9 +243,8 @@ class ProcessPosts extends Command
         return $sql . implode(', ', $values) . ';';
     }
 
-    protected function getVisitUpdates(&$entities)
+    protected function getVisitUpdates()
     {
-        $collection = Keys::VISIT_COLLECTION;
         $sql = null;
         $updates = [];
         while ($json = $this->redis->rpop(Keys::VISIT_UPDATE_KEY)) {
@@ -287,7 +257,6 @@ class ProcessPosts extends Command
             }
         }
 
-        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['location'])) {
@@ -309,11 +278,6 @@ class ProcessPosts extends Command
             $sql .= 'UPDATE visit SET ' .
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
-
-            if (!isset($entities[$id])) {
-                $entities[$id] = $this->redis->hget($collection, $id);
-            }
-            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }
@@ -332,8 +296,6 @@ class ProcessPosts extends Command
                 . $data['visited_at'] . ','
                 . $data['mark']
                 . ')';
-
-            $this->redis->hset(Keys::VISIT_COLLECTION, $data['id'], json_encode($data));
         }
         if (empty($values)) {
             return null;

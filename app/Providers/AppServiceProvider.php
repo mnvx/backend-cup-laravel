@@ -5,9 +5,13 @@ namespace App\Providers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider;
+use PDO;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /** @var PDO */
+    public static $pdo;
+
     /**
      * Bootstrap any application services.
      *
@@ -29,8 +33,11 @@ class AppServiceProvider extends ServiceProvider
             return Redis::connection('default');
         });
 
-        $this->app->singleton('PDO', function ($app) {
-            return DB::connection()->getPdo();
+        $this->app->bind('PDO', function ($app) {
+            if (!self::$pdo) {
+                self::$pdo = DB::connection()->getPdo();
+            }
+            return self::$pdo;
         });
     }
 }

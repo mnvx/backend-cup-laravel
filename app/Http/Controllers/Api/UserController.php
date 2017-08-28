@@ -12,6 +12,8 @@ class UserController extends ApiController
 {
     protected $collection = Keys::USER_COLLECTION;
 
+    protected $table = 'profile';
+
     public function getVisits($id, Request $request)
     {
         $requestData = $request->all();
@@ -33,7 +35,7 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        $entity = $this->redis->hget($this->collection, $id);
+        $entity = $this->getRecord($id);
         if (!$entity) {
             return $this->get404();
         }
@@ -125,7 +127,8 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        if (!$entity = $this->redis->hget($this->collection, $id)) {
+        $entity = $this->getRecord($id);
+        if (!$entity) {
             return $this->get404();
         }
 

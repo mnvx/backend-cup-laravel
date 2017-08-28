@@ -26,8 +26,6 @@ class LoadData extends Command
 
     protected $path = '/tmp/data/data.zip';
 
-    protected $redis;
-
     /** @var PDO */
     protected $pdo;
 
@@ -44,7 +42,6 @@ class LoadData extends Command
     {
         echo 'load_files' . PHP_EOL;
 
-        $this->redis = App::make('Redis');
         $this->pdo = App::make('PDO');
 
         $this->loadUsers();
@@ -83,7 +80,6 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO profile (id, birth_date, email, first_name, last_name, gender) VALUES ';
             $first = true;
-            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -99,13 +95,10 @@ class LoadData extends Command
                     "'" . $item['gender'] . "'" .
                 ')';
 
-                $mset[$item['id']] = json_encode($item);
-
                 $first = false;
                 $this->usersCount++;
             }
 
-            $this->redis->hmset(Keys::USER_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('profile');
@@ -139,7 +132,6 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
             $first = true;
-            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -154,13 +146,10 @@ class LoadData extends Command
                     $item['distance'] .
                 ')';
 
-                $mset[$item['id']] = json_encode($item);
-
                 $first = false;
                 $this->locationsCount++;
             }
 
-            $this->redis->hmset(Keys::LOCATION_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('location');
@@ -194,7 +183,6 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
             $first = true;
-            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -209,13 +197,10 @@ class LoadData extends Command
                     $item['mark'] .
                 ')';
 
-                $mset[$item['id']] = json_encode($item);
-
                 $first = false;
                 $this->visitCount++;
             }
 
-            $this->redis->hmset(Keys::VISIT_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('visit');

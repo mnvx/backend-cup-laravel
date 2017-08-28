@@ -13,13 +13,15 @@ class LocationController extends ApiController
 {
     protected $collection = 'location';
 
+    protected $table = 'location';
+
     public function getAverage($id, Request $request)
     {
         if (!ctype_digit($id)) {
             return $this->get404();
         }
 
-        $entity = $this->redis->hget($this->collection, $id);
+        $entity = $this->getRecord($id);
         if (!$entity) {
             return $this->get404();
         }
@@ -136,7 +138,8 @@ class LocationController extends ApiController
             return $this->get404();
         }
 
-        if (!$entity = $this->redis->hget($this->collection, $id)) {
+        $entity = $this->getRecord($id);
+        if (!$entity) {
             return $this->get404();
         }
 
