@@ -25,8 +25,8 @@ class CreateTableProfile extends Migration
             $table->string('gender', 1);
             $table->bigInteger('birth_date')->index();
         });
-        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (gender IN ('m', 'f'))");
-        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (birth_date >= -1262311200 AND birth_date < 915224400)");
+//        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (gender IN ('m', 'f'))");
+//        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (birth_date >= -1262311200 AND birth_date < 915224400)");
     }
 
     /**

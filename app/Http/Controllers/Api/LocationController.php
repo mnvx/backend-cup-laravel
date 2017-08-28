@@ -6,7 +6,7 @@ use App\Model\Keys;
 use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
 use PDO;
 
 class LocationController extends ApiController
@@ -75,7 +75,7 @@ class LocationController extends ApiController
             }
         }
 
-        $pdo = DB::connection()->getPdo();
+        $pdo = App::make('PDO');
         $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
 
         return $this->jsonResponse('{"avg": ' . round($data['res'], 5) . '}');

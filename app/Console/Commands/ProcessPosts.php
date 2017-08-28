@@ -48,7 +48,7 @@ class ProcessPosts extends Command
         while (true) {
             $hasNews = false;
 
-            $sqlUpdates = $this->getUserUpdates();
+            $sqlUpdates = $this->getUserUpdates($updateEntities);
             $sqlInserts = $this->getUserInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -63,13 +63,16 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
+                    if (!empty($updateEntities)) {
+                        $this->redis->hmset(Keys::USER_COLLECTION, $updateEntities);
+                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getLocationUpdates();
+            $sqlUpdates = $this->getLocationUpdates($updateEntities);
             $sqlInserts = $this->getLocationInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -84,13 +87,16 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
+                    if (!empty($updateEntities)) {
+                        $this->redis->hmset(Keys::LOCATION_COLLECTION, $updateEntities);
+                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getVisitUpdates();
+            $sqlUpdates = $this->getVisitUpdates($updateEntities);
             $sqlInserts = $this->getVisitInserts();
             if ($sqlInserts) {
                 $hasNews = true;
@@ -105,13 +111,16 @@ class ProcessPosts extends Command
                 $hasNews = true;
                 try {
                     $this->pdo->exec($sqlUpdates);
+                    if (!empty($updateEntities)) {
+                        $this->redis->hmset(Keys::VISIT_COLLECTION, $updateEntities);
+                    }
                 }
                 catch (\PDOException $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            echo 'Process posts step ' . ++$count . PHP_EOL;
+            //echo 'Process posts step ' . ++$count . PHP_EOL;
 
             if (!$hasNews) {
                 sleep(1);
@@ -119,7 +128,7 @@ class ProcessPosts extends Command
         }
     }
 
-    protected function getUserUpdates()
+    protected function getUserUpdates(&$entities)
     {
         $collection = Keys::USER_COLLECTION;
         $sql = null;
@@ -134,6 +143,7 @@ class ProcessPosts extends Command
             }
         }
 
+        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['email'])) {
@@ -159,9 +169,10 @@ class ProcessPosts extends Command
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
 
-            $entity = json_decode($this->redis->hget($collection, $id), true);
-
-            $this->redis->hset($collection, $data['id'], json_encode($data + $entity));
+            if (!isset($entities[$id])) {
+                $entities[$id] = $this->redis->hget($collection, $id);
+            }
+            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }
@@ -191,7 +202,7 @@ class ProcessPosts extends Command
         return $sql . implode(', ', $values) . ';';
     }
 
-    protected function getLocationUpdates()
+    protected function getLocationUpdates(&$entities)
     {
         $collection = Keys::LOCATION_COLLECTION;
         $sql = null;
@@ -206,6 +217,7 @@ class ProcessPosts extends Command
             }
         }
 
+        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['place'])) {
@@ -228,9 +240,10 @@ class ProcessPosts extends Command
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
 
-            $entity = json_decode($this->redis->hget($collection, $id), true);
-
-            $this->redis->hset($collection, $data['id'], json_encode($data + $entity));
+            if (!isset($entities[$id])) {
+                $entities[$id] = $this->redis->hget($collection, $id);
+            }
+            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }
@@ -259,7 +272,7 @@ class ProcessPosts extends Command
         return $sql . implode(', ', $values) . ';';
     }
 
-    protected function getVisitUpdates()
+    protected function getVisitUpdates(&$entities)
     {
         $collection = Keys::VISIT_COLLECTION;
         $sql = null;
@@ -274,6 +287,7 @@ class ProcessPosts extends Command
             }
         }
 
+        $entities = [];
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['location'])) {
@@ -296,9 +310,10 @@ class ProcessPosts extends Command
                 implode(', ', $set) .
                 ' WHERE id = ' . $data['id'] . ';';
 
-            $entity = json_decode($this->redis->hget($collection, $id), true);
-
-            $this->redis->hset($collection, $data['id'], json_encode($data + $entity));
+            if (!isset($entities[$id])) {
+                $entities[$id] = $this->redis->hget($collection, $id);
+            }
+            $entities[$id] = json_encode($data + json_decode($entities[$id], true));
         }
         return $sql;
     }

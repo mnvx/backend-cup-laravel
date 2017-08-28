@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton('Redis', function ($app) {
             return Redis::connection('default');
+        });
+
+        $this->app->singleton('PDO', function ($app) {
+            return DB::connection()->getPdo();
         });
     }
 }

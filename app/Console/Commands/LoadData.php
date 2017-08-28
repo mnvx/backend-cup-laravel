@@ -2,12 +2,11 @@
 
 namespace App\Console\Commands;
 
-use App\Model\Entity\Location;
-use App\Model\Entity\User;
-use App\Model\Entity\Visit;
+use App\Model\Keys;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use PDO;
 
 class LoadData extends Command
 {
@@ -29,6 +28,13 @@ class LoadData extends Command
 
     protected $redis;
 
+    /** @var PDO */
+    protected $pdo;
+
+    protected $usersCount = 0;
+    protected $locationsCount = 0;
+    protected $visitCount = 0;
+
     /**
      * Execute the console command.
      *
@@ -39,12 +45,16 @@ class LoadData extends Command
         echo 'load_files' . PHP_EOL;
 
         $this->redis = App::make('Redis');
+        $this->pdo = App::make('PDO');
 
         $this->loadUsers();
-        $this->loadLocations();
-        $this->loadVisits();
+        echo 'files_loaded u:' . $this->usersCount . '/l:' . $this->locationsCount . '/v:' . $this->visitCount . PHP_EOL;
 
-        echo 'files_loaded' . PHP_EOL;
+        $this->loadLocations();
+        echo 'files_loaded u:' . $this->usersCount . '/l:' . $this->locationsCount . '/v:' . $this->visitCount . PHP_EOL;
+
+        $this->loadVisits();
+        echo 'files_loaded u:' . $this->usersCount . '/l:' . $this->locationsCount . '/v:' . $this->visitCount . PHP_EOL;
     }
 
     protected function loadUsers()
@@ -65,7 +75,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "users... from $filename" . PHP_EOL;
+            //echo "users... from $filename" . PHP_EOL;
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -73,6 +83,7 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO profile (id, birth_date, email, first_name, last_name, gender) VALUES ';
             $first = true;
+            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -82,17 +93,19 @@ class LoadData extends Command
                 $sql .= '(' .
                     $item['id'] . ", " .
                     $item['birth_date'] . ", " .
-                    DB::connection()->getPdo()->quote($item['email']) . ", " .
-                    DB::connection()->getPdo()->quote($item['first_name']) . ", " .
-                    DB::connection()->getPdo()->quote($item['last_name']) . ", " .
+                    $this->pdo->quote($item['email']) . ", " .
+                    $this->pdo->quote($item['first_name']) . ", " .
+                    $this->pdo->quote($item['last_name']) . ", " .
                     "'" . $item['gender'] . "'" .
                 ')';
 
-                $this->redis->hset('user', $item['id'], json_encode($item));
+                $mset[$item['id']] = json_encode($item);
 
                 $first = false;
+                $this->usersCount++;
             }
 
+            $this->redis->hmset(Keys::USER_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('profile');
@@ -118,7 +131,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "locations from $filename...\n";
+            //echo "locations from $filename...\n";
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -126,6 +139,7 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
             $first = true;
+            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -134,17 +148,19 @@ class LoadData extends Command
 
                 $sql .= '(' .
                     $item['id'] . ", " .
-                    DB::connection()->getPdo()->quote($item['place']) . ", " .
-                    DB::connection()->getPdo()->quote($item['country']) . ", " .
-                    DB::connection()->getPdo()->quote($item['city']) . ", " .
+                    $this->pdo->quote($item['place']) . ", " .
+                    $this->pdo->quote($item['country']) . ", " .
+                    $this->pdo->quote($item['city']) . ", " .
                     $item['distance'] .
                 ')';
 
-                $this->redis->hset('location', $item['id'], json_encode($item));
+                $mset[$item['id']] = json_encode($item);
 
                 $first = false;
+                $this->locationsCount++;
             }
 
+            $this->redis->hmset(Keys::LOCATION_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('location');
@@ -170,7 +186,7 @@ class LoadData extends Command
             ) {
                 continue;
             }
-            echo "visits from $filename...\n";
+            //echo "visits from $filename...\n";
             zip_entry_open($zip, $zip_entry, "r");
             $json = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
             zip_entry_close($zip_entry);
@@ -178,6 +194,7 @@ class LoadData extends Command
 
             $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
             $first = true;
+            $mset = [];
             foreach ($data as $item)
             {
                 if (!$first) {
@@ -192,11 +209,13 @@ class LoadData extends Command
                     $item['mark'] .
                 ')';
 
-                $this->redis->hset('visit', $item['id'], json_encode($item));
+                $mset[$item['id']] = json_encode($item);
 
                 $first = false;
+                $this->visitCount++;
             }
 
+            $this->redis->hmset(Keys::VISIT_COLLECTION, $mset);
             $this->executeSql($sql);
         }
         $this->alterSequence('visit');

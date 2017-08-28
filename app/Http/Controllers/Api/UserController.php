@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Keys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
 use PDO;
 
 class UserController extends ApiController
@@ -38,7 +38,7 @@ class UserController extends ApiController
         }
 
         /** @var PDO $pdo */
-        $pdo = DB::connection()->getPdo();
+        $pdo = App::make('PDO');
 
         $sql = 'SELECT mark, visited_at, place
         FROM visit

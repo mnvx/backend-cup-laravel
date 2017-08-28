@@ -25,8 +25,8 @@ class CreateTableVisit extends Migration
             $table->index(['user', 'location', 'visited_at']);
             $table->index(['location', 'user']);
         });
-        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (visited_at >= 946674000 AND visited_at < 1420146000)");
-        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (mark BETWEEN 0 AND 5)");
+//        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (visited_at >= 946674000 AND visited_at < 1420146000)");
+//        DB::statement('ALTER TABLE ' . $this->table . " ADD CHECK (mark BETWEEN 0 AND 5)");
     }
 
     /**

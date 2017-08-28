@@ -94,13 +94,12 @@ RUN service postgresql start && \
 # Expose volumes and ports
 EXPOSE 80
 
-#ADD ./install/data.zip /tmp/data/data.zip
+ADD ./install/data.zip /tmp/data/data.zip
 
 CMD service redis-server start ; \
     service postgresql start ; \
 #    service mysql start ; \
 #    service postgresql start ; \
-    php /var/www/cup-backend/artisan cup:load-data ; \
     sh /var/www/cup-backend/background.sh ; \
     cd /var/www/cup-backend ; \
     php ./vendor/bin/ppm start --bootstrap=laravel --port=80 --workers=4 --host=[::] --logging=0 --debug=0
