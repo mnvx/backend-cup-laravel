@@ -58,7 +58,7 @@ class ProcessPosts extends Command
             if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->insert('profile', $insertData, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender', 'version']);
+                    $this->clickhouse->insert('profile', $insertData, ['id', 'email', 'first_name', 'last_name', 'gender', 'birth_date', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
