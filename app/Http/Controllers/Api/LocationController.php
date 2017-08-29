@@ -6,8 +6,6 @@ use App\Model\Keys;
 use DateInterval;
 use DateTime;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use PDO;
 
 class LocationController extends ApiController
 {

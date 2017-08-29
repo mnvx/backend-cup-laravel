@@ -31,6 +31,7 @@ class ApiController extends Controller
         $entity = $this->getRecord($id);
 
         if ($entity) {
+            unset($entity['version']);
             $entity = json_encode($entity);
             return (new Response($entity, 200, [
                 'Content-Type' => 'application/json',

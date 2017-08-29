@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Keys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use PDO;
 
 class UserController extends ApiController
 {
