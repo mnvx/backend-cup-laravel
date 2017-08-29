@@ -12,6 +12,7 @@
         "php-pm/php-pm": "dev-master",
         "predis/predis": "~1.0",
         "react/http": "dev-master#cd15204bd15d106d7832c680e4fb0ca0ce2f5e30",
+        "smi2/phpclickhouse": "^0.17.02",
         "symfony/psr-http-message-bridge": "^1.0",
         "zendframework/zend-diactoros": "^1.4"
     },

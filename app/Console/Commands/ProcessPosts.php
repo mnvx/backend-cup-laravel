@@ -3,10 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Model\Keys;
+use ClickHouseDB\Client;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-use PDO;
 
 class ProcessPosts extends Command
 {
@@ -26,8 +25,8 @@ class ProcessPosts extends Command
 
     protected $redis;
 
-    /** @var PDO */
-    protected $pdo;
+    /** @var Client */
+    protected $clickhouse;
 
     /**
      * Execute the console command.
@@ -40,71 +39,70 @@ class ProcessPosts extends Command
 
         $this->redis = App::make('Redis');
 
-        /** @var PDO $pdo */
-        $this->pdo = DB::connection()->getPdo();
+        $this->clickhouse = App::make('Clickhouse');
 
         while (true) {
             $hasNews = false;
 
             $sqlUpdates = $this->getUserUpdates();
-            $sqlInserts = $this->getUserInserts();
-            if ($sqlInserts) {
+            $insertData = $this->getUserInserts();
+            if (!empty($insertData)) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlInserts);
+                    $this->clickhouse->insert('profile', $insertData, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender']);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlUpdates);
+                    $this->clickhouse->exec($sqlUpdates);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
             $sqlUpdates = $this->getLocationUpdates();
-            $sqlInserts = $this->getLocationInserts();
-            if ($sqlInserts) {
+            $insertData = $this->getLocationInserts();
+            if ($insertData) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlInserts);
+                    $this->clickhouse->insert('location', $insertData, ['id', 'place', 'country', 'city', 'distance']);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlUpdates);
+                    $this->clickhouse->exec($sqlUpdates);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
             $sqlUpdates = $this->getVisitUpdates();
-            $sqlInserts = $this->getVisitInserts();
-            if ($sqlInserts) {
+            $insertData = $this->getVisitInserts();
+            if ($insertData) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlInserts);
+                    $this->clickhouse->insert('visit', $insertData, ['id', 'location', 'user', 'visited_at', 'mark']);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
             if ($sqlUpdates) {
                 $hasNews = true;
                 try {
-                    $this->pdo->exec($sqlUpdates);
+                    $this->clickhouse->exec($sqlUpdates);
                 }
-                catch (\PDOException $e) {
+                catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
@@ -134,16 +132,16 @@ class ProcessPosts extends Command
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['email'])) {
-                $set[] = 'email = '  . $this->pdo->quote($data['email']);
+                $set[] = 'email = '  . $this->clickhouse->quote($data['email']);
             }
             if (isset($data['first_name'])) {
-                $set[] = 'first_name = '  . $this->pdo->quote($data['first_name']);
+                $set[] = 'first_name = '  . $this->clickhouse->quote($data['first_name']);
             }
             if (isset($data['last_name'])) {
-                $set[] = 'last_name = '  . $this->pdo->quote($data['last_name']);
+                $set[] = 'last_name = '  . $this->clickhouse->quote($data['last_name']);
             }
             if (isset($data['gender'])) {
-                $set[] = 'gender = '  . $this->pdo->quote($data['gender']);
+                $set[] = 'gender = '  . $this->clickhouse->quote($data['gender']);
             }
             if (isset($data['birth_date'])) {
                 $set[] = 'birth_date = '  . $data['birth_date'];
@@ -161,25 +159,21 @@ class ProcessPosts extends Command
 
     protected function getUserInserts()
     {
-        $sql = 'INSERT INTO profile (id, email, first_name, last_name, gender, birth_date) VALUES ';
         $values = [];
         while ($json = $this->redis->rpop(Keys::USER_INSERT_KEY)) {
             $data = json_decode($json, true);
 
-            $values[] = '('
-                . $data['id'] . ','
-                . $this->pdo->quote($data['email']) . ','
-                . $this->pdo->quote($data['first_name']) . ','
-                . $this->pdo->quote($data['last_name']) . ','
-                . $this->pdo->quote($data['gender']) . ','
-                . $data['birth_date']
-                . ')';
-        }
-        if (empty($values)) {
-            return null;
+            $values[] = [
+                $data['id'],
+                $data['email'],
+                $data['first_name'],
+                $data['last_name'],
+                $data['gender'],
+                $data['birth_date'],
+            ];
         }
 
-        return $sql . implode(', ', $values) . ';';
+        return $values;
     }
 
     protected function getLocationUpdates()
@@ -199,13 +193,13 @@ class ProcessPosts extends Command
         foreach ($updates as $id => $data) {
             $set = [];
             if (isset($data['place'])) {
-                $set[] = 'place = '  . $this->pdo->quote($data['place']);
+                $set[] = 'place = '  . $this->clickhouse->quote($data['place']);
             }
             if (isset($data['country'])) {
-                $set[] = 'country = '  . $this->pdo->quote($data['country']);
+                $set[] = 'country = '  . $this->clickhouse->quote($data['country']);
             }
             if (isset($data['city'])) {
-                $set[] = 'city = '  . $this->pdo->quote($data['city']);
+                $set[] = 'city = '  . $this->clickhouse->quote($data['city']);
             }
             if (isset($data['distance'])) {
                 $set[] = 'distance = '  . $data['distance'];
@@ -223,24 +217,20 @@ class ProcessPosts extends Command
 
     protected function getLocationInserts()
     {
-        $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
         $values = [];
         while ($json = $this->redis->rpop(Keys::LOCATION_INSERT_KEY)) {
             $data = json_decode($json, true);
 
-            $values[] = '('
-                . $data['id'] . ','
-                . $this->pdo->quote($data['place']) . ','
-                . $this->pdo->quote($data['country']) . ','
-                . $this->pdo->quote($data['city']) . ','
-                . $data['distance']
-                . ')';
-        }
-        if (empty($values)) {
-            return null;
+            $values[] = [
+                $data['id'],
+                $data['place'],
+                $data['country'],
+                $data['city'],
+                $data['distance'],
+            ];
         }
 
-        return $sql . implode(', ', $values) . ';';
+        return $values;
     }
 
     protected function getVisitUpdates()
@@ -284,23 +274,19 @@ class ProcessPosts extends Command
 
     protected function getVisitInserts()
     {
-        $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
         $values = [];
         while ($json = $this->redis->rpop(Keys::VISIT_INSERT_KEY)) {
             $data = json_decode($json, true);
 
-            $values[] = '('
-                . $data['id'] . ','
-                . $data['location'] . ','
-                . $data['user'] . ','
-                . $data['visited_at'] . ','
-                . $data['mark']
-                . ')';
-        }
-        if (empty($values)) {
-            return null;
+            $values[] = [
+                $data['id'],
+                $data['location'],
+                $data['user'],
+                $data['visited_at'],
+                $data['mark'],
+            ];
         }
 
-        return $sql . implode(', ', $values) . ';';
+        return $values;
     }
 }

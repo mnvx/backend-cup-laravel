@@ -2,15 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider;
-use PDO;
+use ClickHouseDB;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /** @var PDO */
-    public static $pdo;
+    public static $clickhouse;
 
     /**
      * Bootstrap any application services.
@@ -33,11 +31,23 @@ class AppServiceProvider extends ServiceProvider
             return Redis::connection('default');
         });
 
-        $this->app->bind('PDO', function ($app) {
-            if (!self::$pdo) {
-                self::$pdo = DB::connection()->getPdo();
+        $this->app->singleton('Clickhouse', function ($app) {
+            if (!self::$clickhouse) {
+                $config = [
+                    'host'     => '127.0.0.1',
+                    'port'     => '8123',
+                    'username' => 'default',
+                    'password' => ''
+                ];
+
+                $db = new ClickHouseDB\Client($config);
+                $db->database('cup');
+                $db->setTimeout(2);
+                $db->setConnectTimeOut(2);
+
+                self::$clickhouse = $db;
             }
-            return self::$pdo;
+            return self::$clickhouse;
         });
     }
 }

@@ -2,11 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Model\Keys;
+use ClickHouseDB\Client;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-use PDO;
 
 class LoadData extends Command
 {
@@ -26,8 +24,8 @@ class LoadData extends Command
 
     protected $path = '/tmp/data/data.zip';
 
-    /** @var PDO */
-    protected $pdo;
+    /** @var Client */
+    protected $clickhouse;
 
     protected $usersCount = 0;
     protected $locationsCount = 0;
@@ -42,7 +40,7 @@ class LoadData extends Command
     {
         echo 'load_files' . PHP_EOL;
 
-        $this->pdo = App::make('PDO');
+        $this->clickhouse = App::make('Clickhouse');
 
         $this->loadUsers();
         echo 'files_loaded u:' . $this->usersCount . '/l:' . $this->locationsCount . '/v:' . $this->visitCount . PHP_EOL;
@@ -56,7 +54,7 @@ class LoadData extends Command
 
     protected function loadUsers()
     {
-        $this->executeSql('TRUNCATE TABLE profile');
+        $this->clickhouse->truncateTable('profile');
 
         $zip = zip_open($this->path);
 
@@ -78,37 +76,30 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['users'];
 
-            $sql = 'INSERT INTO profile (id, birth_date, email, first_name, last_name, gender) VALUES ';
-            $first = true;
+            $rows = [];
             foreach ($data as $item)
             {
-                if (!$first) {
-                    $sql .= ', ';
-                }
+                $rows[] = [
+                    $item['id'],
+                    $item['birth_date'],
+                    $item['email'],
+                    $item['first_name'],
+                    $item['last_name'],
+                    $item['gender'],
+                ];
 
-                $sql .= '(' .
-                    $item['id'] . ", " .
-                    $item['birth_date'] . ", " .
-                    $this->pdo->quote($item['email']) . ", " .
-                    $this->pdo->quote($item['first_name']) . ", " .
-                    $this->pdo->quote($item['last_name']) . ", " .
-                    "'" . $item['gender'] . "'" .
-                ')';
-
-                $first = false;
                 $this->usersCount++;
             }
 
-            $this->executeSql($sql);
+            $this->clickhouse->insert('profile', $rows, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender']);
         }
-        $this->alterSequence('profile');
 
         zip_close($zip);
     }
 
     protected function loadLocations()
     {
-        $this->executeSql('TRUNCATE TABLE location');
+        $this->clickhouse->truncateTable('location');
 
         $zip = zip_open($this->path);
 
@@ -130,36 +121,29 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['locations'];
 
-            $sql = 'INSERT INTO location (id, place, country, city, distance) VALUES ';
-            $first = true;
+            $rows = [];
             foreach ($data as $item)
             {
-                if (!$first) {
-                    $sql .= ', ';
-                }
+                $rows[] = [
+                    $item['id'],
+                    $item['place'],
+                    $item['country'],
+                    $item['city'],
+                    $item['distance'],
+                ];
 
-                $sql .= '(' .
-                    $item['id'] . ", " .
-                    $this->pdo->quote($item['place']) . ", " .
-                    $this->pdo->quote($item['country']) . ", " .
-                    $this->pdo->quote($item['city']) . ", " .
-                    $item['distance'] .
-                ')';
-
-                $first = false;
                 $this->locationsCount++;
             }
 
-            $this->executeSql($sql);
+            $this->clickhouse->insert('location', $rows, ['id', 'place', 'country', 'city', 'distance']);
         }
-        $this->alterSequence('location');
 
         zip_close($zip);
     }
 
     protected function loadVisits()
     {
-        $this->executeSql('TRUNCATE TABLE visit');
+        $this->clickhouse->truncateTable('visit');
 
         $zip = zip_open($this->path);
 
@@ -181,57 +165,24 @@ class LoadData extends Command
             zip_entry_close($zip_entry);
             $data = json_decode($json, true)['visits'];
 
-            $sql = 'INSERT INTO visit (id, location, "user", visited_at, mark) VALUES ';
-            $first = true;
+            $rows = [];
             foreach ($data as $item)
             {
-                if (!$first) {
-                    $sql .= ', ';
-                }
+                $rows[] = [
+                    $item['id'],
+                    $item['location'],
+                    $item['user'],
+                    $item['visited_at'],
+                    $item['mark'],
+                ];
 
-                $sql .= '(' .
-                    $item['id'] . ", " .
-                    $item['location'] . ", " .
-                    $item['user'] . ", " .
-                    $item['visited_at'] . ", " .
-                    $item['mark'] .
-                ')';
-
-                $first = false;
                 $this->visitCount++;
             }
 
-            $this->executeSql($sql);
+            $this->clickhouse->insert('visit', $rows, ['id', 'location', 'user', 'visited_at', 'mark']);
         }
-        $this->alterSequence('visit');
 
         zip_close($zip);
-    }
-
-    protected function executeSql($sql)
-    {
-        $completed = false;
-        while (!$completed) {
-            try {
-                $this->pdo->exec($sql);
-                $completed = true;
-            }
-            catch (\Throwable $e) {
-                echo 'Error: ' . $e->getMessage() . PHP_EOL;
-                $this->pdo = DB::connection()->getPdo();
-                sleep(1);
-            }
-        }
-    }
-
-    /**
-     * Установка корректного sequence
-     * @param string $tableName
-     */
-    protected function alterSequence($tableName)
-    {
-        $newId = DB::table($tableName)->select(DB::raw('MAX(id) as max_id'))->first()->max_id + 1;
-        DB::statement('ALTER SEQUENCE ' . $tableName . '_id_seq' . ' RESTART WITH ' . $newId);
     }
 
 }

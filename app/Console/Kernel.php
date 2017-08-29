@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\LoadData;
+use App\Console\Commands\Migrations;
 use App\Console\Commands\ProcessPosts;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -17,6 +18,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         LoadData::class,
         ProcessPosts::class,
+        Migrations::class,
     ];
 
     /**
