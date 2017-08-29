@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Model\Keys;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use PDO;
 
@@ -40,35 +39,33 @@ class UserController extends ApiController
             return $this->get404();
         }
 
-        /** @var PDO $pdo */
-        $pdo = App::make('PDO');
-
-        $sql = 'SELECT mark, visited_at, place
-        FROM visit
-        JOIN location ON location.id = visit.location
-        WHERE "user" = ' . $id;
+        // tail -f /var/www/cup-backend/storage/logs/laravel.log
+        // Yes! It is some crazy but fast select for Clickhouse.
+        $sql = 'SELECT t.mark, t.visited_at, place
+            FROM visit AS t
+            ANY LEFT JOIN (
+                    SELECT id AS location, place, country, distance 
+                    FROM location as l
+                    WHERE (SELECT l2.id FROM location AS l2 WHERE l2.id = l.id AND l2.version > l.version) IS NULL
+                ) USING (location)
+            WHERE (SELECT t2.id FROM visit AS t2 WHERE t2.id = t.id AND t2.version > t.version) IS NULL
+            AND t.user = ' . $id;
 
         if ($fromDate) {
-            $sql .= ' AND visited_at > ' . $fromDate;
+            $sql .= ' AND t.visited_at > ' . $fromDate;
         }
         if ($toDate) {
-            $sql .= ' AND visited_at < ' . $toDate;
+            $sql .= ' AND t.visited_at < ' . $toDate;
         }
         if ($country) {
-            $sql .= ' AND country = ' . $pdo->quote($country);
+            $sql .= " AND country = '" . str_replace("'", '\\\'', $country) . "'";
         }
         if ($distance) {
             $sql .= ' AND distance < ' . $distance;
         }
-        $sql .= ' ORDER BY visited_at';
+        $sql .= ' ORDER BY t.visited_at';
 
-        try {
-            $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Throwable $e) {
-            $pdo = DB::connection()->getPdo();
-            $data = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        }
+        $data = $this->clickhouse->select($sql)->rows();
 
         return $this->jsonResponse('{"visits": ' . json_encode($data) . '}');
     }
@@ -128,7 +125,7 @@ class UserController extends ApiController
         }
 
         $entity = $this->getRecord($id);
-        if (!$entity) {
+        if (empty($entity)) {
             return $this->get404();
         }
 
@@ -136,8 +133,7 @@ class UserController extends ApiController
             return $this->get400();
         }
 
-        $requestData['id'] = (int)$id;
-        $this->redis->lpush(Keys::USER_UPDATE_KEY, json_encode($requestData));
+        $this->redis->lpush(Keys::USER_UPDATE_KEY, json_encode($requestData + $entity));
 
         return $this->jsonResponse('{}');
     }

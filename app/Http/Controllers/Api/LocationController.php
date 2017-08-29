@@ -44,49 +44,47 @@ class LocationController extends ApiController
             return $this->get400();
         }
 
-        $sql = 'SELECT COALESCE(AVG(mark), 0) as res
-        FROM visit';
-        $where = ' WHERE location = ' . $id;
+        $sql = 'SELECT AVG(mark) AS res
+            FROM visit t';
+        $where = ' WHERE (SELECT t2.id FROM visit AS t2 WHERE t2.id = t.id AND t2.version > t.version) IS NULL
+            AND t.location = ' . $id;
 
         if ($fromDate !== null) {
-            $where .= ' AND visited_at > ' . $fromDate;
+            $where .= ' AND t.visited_at > ' . $fromDate;
         }
         if ($toDate !== null) {
-            $where .= ' AND visited_at < ' . $toDate;
+            $where .= ' AND t.visited_at < ' . $toDate;
         }
 
         if ($fromAge || $toAge !== null || $gender !== null) {
-            $sql .= ' JOIN profile on profile.id = visit.user';
+            $sql .= ' ANY LEFT JOIN (
+                    SELECT id AS user, birth_date, gender 
+                    FROM profile as p
+                    WHERE (SELECT p2.id FROM profile AS p2 WHERE p2.id = p.id AND p2.version > p.version) IS NULL
+                ) USING (user)';
 
             if ($fromAge && $toAge) {
                 $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
                 $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
-                $where .= ' AND profile.birth_date BETWEEN ' . $to . ' AND ' . $from;
+                $where .= ' AND birth_date BETWEEN ' . $to . ' AND ' . $from;
             }
             elseif ($fromAge) {
                 $from = strtotime((new Datetime())->sub(new DateInterval('P' . $fromAge . 'Y'))->format('Y-m-d H:i:s'));
-                $where .= ' AND profile.birth_date < ' . $from;
+                $where .= ' AND birth_date < ' . $from;
             }
             elseif ($toAge) {
                 $to = strtotime((new Datetime())->sub(new DateInterval('P' . $toAge . 'Y'))->format('Y-m-d H:i:s'));
-                $where .= ' AND profile.birth_date > ' . $to;
+                $where .= ' AND birth_date > ' . $to;
             }
 
             if ($gender) {
-                $where .= " AND profile.gender = '" . $gender . "'";
+                $where .= " AND gender = '" . $gender . "'";
             }
         }
 
-        $pdo = App::make('PDO');
-        try {
-            $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
-        }
-        catch (\Throwable $e) {
-            $pdo = DB::connection()->getPdo();
-            $data = $pdo->query($sql . $where)->fetch(PDO::FETCH_ASSOC);
-        }
+        $data = $this->clickhouse->select($sql . $where)->fetchOne();
 
-        return $this->jsonResponse('{"avg": ' . round($data['res'], 5) . '}');
+        return $this->jsonResponse('{"avg": ' . round($data['res'] ?? 0, 5) . '}');
     }
 
     public function create(Request $request)

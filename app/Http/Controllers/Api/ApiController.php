@@ -3,21 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Providers\AppServiceProvider;
+use ClickHouseDB\Client;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-use PDO;
 
 class ApiController extends Controller
 {
     protected $redis;
+
+    /** @var Client */
+    protected $clickhouse;
 
     protected $table; // override it
 
     public function __construct()
     {
         $this->redis = App::make('Redis');
+        $this->clickhouse = App::make('Clickhouse');
     }
 
     public function get($id)
@@ -41,17 +43,12 @@ class ApiController extends Controller
 
     protected function getRecord($id)
     {
-        /** @var PDO $pdo */
-        $pdo = App::make('PDO');
-        $sql = 'SELECT * FROM ' . $this->table . ' WHERE id = ' . $id;
-        try {
-            $entity = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
-        }
-        catch (\Throwable $e) {
-            AppServiceProvider::$pdo = $pdo = DB::connection()->getPdo();
-            $entity = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
-        }
-        return $entity;
+        $sql = 'SELECT * 
+            FROM ' . $this->table . ' 
+            WHERE id = ' . $id . ' 
+            ORDER BY version DESC
+            LIMIT 1';
+        return $this->clickhouse->select($sql)->fetchOne();
     }
 
     public function get400()

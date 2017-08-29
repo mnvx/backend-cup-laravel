@@ -38,7 +38,8 @@ class Migrations extends Command
                 first_name String,
                 last_name String,
                 gender String,
-                birth_date Int32
+                birth_date Int32,
+                version Int32
             ) 
             ENGINE = Memory
         ');
@@ -49,18 +50,20 @@ class Migrations extends Command
                 place String,
                 country String,
                 city String,
-                distance Int32
+                distance Int32,
+                version Int32
             ) 
             ENGINE = Memory
         ');
 
         $db->write('
-            CREATE TABLE profile (
+            CREATE TABLE visit (
                 id Int32,
                 location Int32,
                 user Int32,
                 visited_at Int32,
-                mark Int32
+                mark Int32,
+                version Int32
             ) 
             ENGINE = Memory
         ');

@@ -66,7 +66,8 @@ RUN cp /var/www/cup-backend/.env.example /var/www/cup-backend/.env
 RUN php /var/www/cup-backend/artisan key:generate
 
 RUN service clickhouse-server start && \
-    #php /var/www/cup-backend/artisan cup:migrations && \
+    #clickhouse-client -q 'CREATE DATABASE cup;' && \
+    php /var/www/cup-backend/artisan cup:migrations && \
     service clickhouse-server stop
 
 # Expose volumes and ports

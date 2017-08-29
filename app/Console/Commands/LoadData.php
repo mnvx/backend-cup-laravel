@@ -86,12 +86,13 @@ class LoadData extends Command
                     $item['first_name'],
                     $item['last_name'],
                     $item['gender'],
+                    0,
                 ];
 
                 $this->usersCount++;
             }
 
-            $this->clickhouse->insert('profile', $rows, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender']);
+            $this->clickhouse->insert('profile', $rows, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender', 'version']);
         }
 
         zip_close($zip);
@@ -130,12 +131,13 @@ class LoadData extends Command
                     $item['country'],
                     $item['city'],
                     $item['distance'],
+                    0,
                 ];
 
                 $this->locationsCount++;
             }
 
-            $this->clickhouse->insert('location', $rows, ['id', 'place', 'country', 'city', 'distance']);
+            $this->clickhouse->insert('location', $rows, ['id', 'place', 'country', 'city', 'distance', 'version']);
         }
 
         zip_close($zip);
@@ -174,12 +176,13 @@ class LoadData extends Command
                     $item['user'],
                     $item['visited_at'],
                     $item['mark'],
+                    0,
                 ];
 
                 $this->visitCount++;
             }
 
-            $this->clickhouse->insert('visit', $rows, ['id', 'location', 'user', 'visited_at', 'mark']);
+            $this->clickhouse->insert('visit', $rows, ['id', 'location', 'user', 'visited_at', 'mark', 'version']);
         }
 
         zip_close($zip);

@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
                 ];
 
                 $db = new ClickHouseDB\Client($config);
-                $db->database('cup');
+                $db->database('default');
                 $db->setTimeout(2);
                 $db->setConnectTimeOut(2);
 

@@ -44,63 +44,63 @@ class ProcessPosts extends Command
         while (true) {
             $hasNews = false;
 
-            $sqlUpdates = $this->getUserUpdates();
+            $updateData = $this->getUserUpdates();
             $insertData = $this->getUserInserts();
             if (!empty($insertData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->insert('profile', $insertData, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender']);
+                    $this->clickhouse->insert('profile', $insertData, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
-            if ($sqlUpdates) {
+            if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->exec($sqlUpdates);
+                    $this->clickhouse->insert('profile', $insertData, ['id', 'birth_date', 'email', 'first_name', 'last_name', 'gender', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getLocationUpdates();
+            $updateData = $this->getLocationUpdates();
             $insertData = $this->getLocationInserts();
             if ($insertData) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->insert('location', $insertData, ['id', 'place', 'country', 'city', 'distance']);
+                    $this->clickhouse->insert('location', $insertData, ['id', 'place', 'country', 'city', 'distance', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
-            if ($sqlUpdates) {
+            if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->exec($sqlUpdates);
+                    $this->clickhouse->exec($updateData);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
 
-            $sqlUpdates = $this->getVisitUpdates();
+            $updateData = $this->getVisitUpdates();
             $insertData = $this->getVisitInserts();
             if ($insertData) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->insert('visit', $insertData, ['id', 'location', 'user', 'visited_at', 'mark']);
+                    $this->clickhouse->insert('visit', $insertData, ['id', 'location', 'user', 'visited_at', 'mark', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
                 }
             }
-            if ($sqlUpdates) {
+            if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->exec($sqlUpdates);
+                    $this->clickhouse->exec($updateData);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
@@ -121,40 +121,10 @@ class ProcessPosts extends Command
         $updates = [];
         while ($json = $this->redis->rpop(Keys::USER_UPDATE_KEY)) {
             $data = json_decode($json, true);
-            if (!isset($updates[$data['id']])) {
-                $updates[$data['id']] = $data;
-            }
-            else {
-                $updates[$data['id']] = $data + $updates[$data['id']];
-            }
+            $data['version']++;
+            $updates[$data['id']] = $data;
         }
-
-        foreach ($updates as $id => $data) {
-            $set = [];
-            if (isset($data['email'])) {
-                $set[] = 'email = '  . $this->clickhouse->quote($data['email']);
-            }
-            if (isset($data['first_name'])) {
-                $set[] = 'first_name = '  . $this->clickhouse->quote($data['first_name']);
-            }
-            if (isset($data['last_name'])) {
-                $set[] = 'last_name = '  . $this->clickhouse->quote($data['last_name']);
-            }
-            if (isset($data['gender'])) {
-                $set[] = 'gender = '  . $this->clickhouse->quote($data['gender']);
-            }
-            if (isset($data['birth_date'])) {
-                $set[] = 'birth_date = '  . $data['birth_date'];
-            }
-
-            if (empty($set)) {
-                continue;
-            }
-            $sql .= 'UPDATE profile SET ' .
-                implode(', ', $set) .
-                ' WHERE id = ' . $data['id'] . ';';
-        }
-        return $sql;
+        return $updates;
     }
 
     protected function getUserInserts()
@@ -170,6 +140,7 @@ class ProcessPosts extends Command
                 $data['last_name'],
                 $data['gender'],
                 $data['birth_date'],
+                1,
             ];
         }
 
@@ -182,37 +153,10 @@ class ProcessPosts extends Command
         $updates = [];
         while ($json = $this->redis->rpop(Keys::LOCATION_UPDATE_KEY)) {
             $data = json_decode($json, true);
-            if (!isset($updates[$data['id']])) {
-                $updates[$data['id']] = $data;
-            }
-            else {
-                $updates[$data['id']] = $data + $updates[$data['id']];
-            }
+            $data['version']++;
+            $updates[$data['id']] = $data;
         }
-
-        foreach ($updates as $id => $data) {
-            $set = [];
-            if (isset($data['place'])) {
-                $set[] = 'place = '  . $this->clickhouse->quote($data['place']);
-            }
-            if (isset($data['country'])) {
-                $set[] = 'country = '  . $this->clickhouse->quote($data['country']);
-            }
-            if (isset($data['city'])) {
-                $set[] = 'city = '  . $this->clickhouse->quote($data['city']);
-            }
-            if (isset($data['distance'])) {
-                $set[] = 'distance = '  . $data['distance'];
-            }
-
-            if (empty($set)) {
-                continue;
-            }
-            $sql .= 'UPDATE location SET ' .
-                implode(', ', $set) .
-                ' WHERE id = ' . $data['id'] . ';';
-        }
-        return $sql;
+        return $updates;
     }
 
     protected function getLocationInserts()
@@ -227,6 +171,7 @@ class ProcessPosts extends Command
                 $data['country'],
                 $data['city'],
                 $data['distance'],
+                1,
             ];
         }
 
@@ -239,35 +184,8 @@ class ProcessPosts extends Command
         $updates = [];
         while ($json = $this->redis->rpop(Keys::VISIT_UPDATE_KEY)) {
             $data = json_decode($json, true);
-            if (!isset($updates[$data['id']])) {
-                $updates[$data['id']] = $data;
-            }
-            else {
-                $updates[$data['id']] = $data + $updates[$data['id']];
-            }
-        }
-
-        foreach ($updates as $id => $data) {
-            $set = [];
-            if (isset($data['location'])) {
-                $set[] = 'location = '  . $data['location'];
-            }
-            if (isset($data['user'])) {
-                $set[] = '"user" = '  . $data['user'];
-            }
-            if (isset($data['visited_at'])) {
-                $set[] = 'visited_at = '  . $data['visited_at'];
-            }
-            if (isset($data['mark'])) {
-                $set[] = 'mark = '  . $data['mark'];
-            }
-
-            if (empty($set)) {
-                continue;
-            }
-            $sql .= 'UPDATE visit SET ' .
-                implode(', ', $set) .
-                ' WHERE id = ' . $data['id'] . ';';
+            $data['version']++;
+            $updates[$data['id']] = $data;
         }
         return $sql;
     }
@@ -284,6 +202,7 @@ class ProcessPosts extends Command
                 $data['user'],
                 $data['visited_at'],
                 $data['mark'],
+                1,
             ];
         }
 
