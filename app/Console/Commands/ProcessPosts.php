@@ -58,7 +58,7 @@ class ProcessPosts extends Command
             if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->insert('profile', $insertData, ['id', 'email', 'first_name', 'last_name', 'gender', 'birth_date', 'version']);
+                    $this->clickhouse->insert('profile', $updateData, ['id', 'email', 'first_name', 'last_name', 'gender', 'birth_date', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
@@ -79,7 +79,7 @@ class ProcessPosts extends Command
             if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->exec($updateData);
+                    $this->clickhouse->insert('location', $updateData, ['id', 'place', 'country', 'city', 'distance', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
@@ -100,7 +100,7 @@ class ProcessPosts extends Command
             if (!empty($updateData)) {
                 $hasNews = true;
                 try {
-                    $this->clickhouse->exec($updateData);
+                    $this->clickhouse->insert('visit', $updateData, ['id', 'location', 'user', 'visited_at', 'mark', 'version']);
                 }
                 catch (\Throwable $e) {
                     echo $e->getMessage() . PHP_EOL;
