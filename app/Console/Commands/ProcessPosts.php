@@ -122,7 +122,15 @@ class ProcessPosts extends Command
         while ($json = $this->redis->rpop(Keys::USER_UPDATE_KEY)) {
             $data = json_decode($json, true);
             $data['version']++;
-            $updates[$data['id']] = $data;
+            $updates[$data['id']] = [
+                $data['id'],
+                $data['email'],
+                $data['first_name'],
+                $data['last_name'],
+                $data['gender'],
+                $data['birth_date'],
+                $data['version'],
+            ];
         }
         return $updates;
     }
@@ -154,7 +162,14 @@ class ProcessPosts extends Command
         while ($json = $this->redis->rpop(Keys::LOCATION_UPDATE_KEY)) {
             $data = json_decode($json, true);
             $data['version']++;
-            $updates[$data['id']] = $data;
+            $updates[$data['id']] = [
+                $data['id'],
+                $data['place'],
+                $data['country'],
+                $data['city'],
+                $data['distance'],
+                $data['version'],
+            ];
         }
         return $updates;
     }
@@ -185,7 +200,14 @@ class ProcessPosts extends Command
         while ($json = $this->redis->rpop(Keys::VISIT_UPDATE_KEY)) {
             $data = json_decode($json, true);
             $data['version']++;
-            $updates[$data['id']] = $data;
+            $updates[$data['id']] = [
+                $data['id'],
+                $data['location'],
+                $data['user'],
+                $data['visited_at'],
+                $data['mark'],
+                $data['version'],
+            ];;
         }
         return $sql;
     }
