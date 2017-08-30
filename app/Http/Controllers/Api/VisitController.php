@@ -69,7 +69,7 @@ class VisitController extends ApiController
         }
 
         $requestData['id'] = (int)$id;
-        $this->redis->lpush(Keys::VISIT_UPDATE_KEY, json_encode($requestData));
+        $this->redis->lpush(Keys::VISIT_UPDATE_KEY, json_encode($requestData + $entity));
 
         return $this->jsonResponse('{}');
     }

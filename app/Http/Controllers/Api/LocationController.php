@@ -144,7 +144,7 @@ class LocationController extends ApiController
         }
 
         $requestData['id'] = (int)$id;
-        $this->redis->lpush(Keys::LOCATION_UPDATE_KEY, json_encode($requestData));
+        $this->redis->lpush(Keys::LOCATION_UPDATE_KEY, json_encode($requestData + $entity));
 
         return $this->jsonResponse('{}');
     }
